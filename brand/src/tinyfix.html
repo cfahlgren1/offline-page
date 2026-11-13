@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="brand.css"><script>if (location.hash === "#dark") document.documentElement.classList.add("dark");</script><style>
+body{display:flex;align-items:center;gap:40px;padding:0 48px}
+.l{flex:1;min-width:0}
+.name{display:flex;align-items:center;gap:16px;font-size:54px;font-weight:700;letter-spacing:-.04em}
+.name img{width:56px;height:56px}
+.role{font-size:20px;color:var(--sub);letter-spacing:-.01em;margin:14px 0 22px;line-height:1.3}
+.card{width:400px;flex:none;background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:28px 30px;font-family:var(--serif);font-size:19px;line-height:1.6;color:var(--body)}
+.note{display:flex;align-items:center;gap:7px;margin-top:14px;font:600 11.5px var(--sans);letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.note i{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.note span{margin-left:auto;color:var(--faint);font-weight:500;letter-spacing:0;text-transform:none}
+.of{font-size:13px;color:var(--faint);margin-top:12px}
+</style></head><body>
+<div class="l">
+  <div class="name"><img src="../marks/tinyfix.svg">tinyfix</div>
+  <div class="role">Autocorrect that reads the words on both sides, in your browser.</div>
+  <div class="stats"><span class="stat"><b>1.9M</b> params</span><span class="stat"><b>2.1 MB</b></span><span class="stat"><b>~3 ms</b></span><span class="stat"><b>94%</b> of fixes right</span></div>
+  <div class="of">Part of offline.page</div>
+</div>
+<div class="card"><div style="--accent:var(--purple)">I got a letter <span class="fixed">from</span> the bank today.<div class="note"><i></i>Fixed from context<span>form → from · 3 ms</span></div></div></div>
+</body></html>

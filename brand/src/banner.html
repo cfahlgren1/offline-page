@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="brand.css"><script>if (location.hash === "#dark") document.documentElement.classList.add("dark");</script><style>
+body{display:flex;align-items:center;gap:40px;padding:0 48px}
+.l{flex:1;min-width:0}
+.brand{display:flex;align-items:center;gap:12px;font-size:22px;font-weight:700;letter-spacing:-.02em}
+.brand img{width:36px;height:36px}
+.brand em{font-style:normal;color:var(--faint);font-weight:600}
+h1{font-size:32px;line-height:1.06;letter-spacing:-.035em;font-weight:700;margin:22px 0 18px}
+.card{width:410px;flex:none;background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:28px 30px 26px;font-family:var(--serif);font-size:17.5px;line-height:1.7;color:var(--body)}
+.card p+p{margin-top:14px}
+.card .bar{display:flex;gap:6px;margin:-10px 0 16px}.card .bar i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.tag{display:inline-flex;align-items:center;gap:6px;font:600 11px var(--sans);letter-spacing:.04em;text-transform:uppercase;color:var(--purple);margin-top:2px}
+.tag i{width:6px;height:6px;border-radius:50%;background:var(--purple)}
+</style></head><body>
+<div class="l">
+  <div class="brand"><img src="../marks/offline-page.svg"><span>offline<em>.page</em></span></div>
+  <h1>Autocorrect and autocomplete that work in airplane mode.</h1>
+  <div class="stats"><span class="stat"><b>3 MB</b> of models</span><span class="stat"><b>~3 ms</b> per fix</span><span class="stat"><b>0</b> servers</span></div>
+</div>
+<div class="card">
+  <div class="bar"><i></i><i></i><i></i></div>
+  <p>I got a letter <span class="fixed">from</span> the bank today.</p>
+  <div class="tag"><i></i>tinyfix<b style="font-weight:500;color:var(--faint);text-transform:none;letter-spacing:0">&nbsp;fixed “form” → “from”</b></div>
+  <p>Please accept my resignation. I will <span style="white-space:nowrap">be o<span class="caret"></span><span class="ghost">ut of</span><span class="key">tab</span></span></p>
+</div>
+</body></html>
