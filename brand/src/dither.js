@@ -57,3 +57,22 @@
   window.theme = location.hash === "#dark" ? "dark" : "light";
   document.documentElement.classList.toggle("dark", window.theme === "dark");
 })();
+
+// Fills the grid from fn(u, v, px, py) → 0..1, where u, v are 0..1 across the image and px, py are CSS pixels.
+window.paintField = function paintField(ctx, grid, fn) {
+  const image = ctx.createImageData(grid.width, grid.height);
+  for (let y = 0; y < grid.height; y++) {
+    for (let x = 0; x < grid.width; x++) {
+      const lum = Math.max(0, Math.min(1, fn(x / grid.width, y / grid.height, x * grid.cell, y * grid.cell)));
+      const i = (y * grid.width + x) * 4;
+      image.data[i] = image.data[i + 1] = image.data[i + 2] = lum * 255;
+      image.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(image, 0, 0);
+};
+
+window.smoothstep = (edge0, edge1, x) => {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+};
