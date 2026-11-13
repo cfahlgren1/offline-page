@@ -18,14 +18,14 @@ export const MODELS = {
     name: "tinyfix",
     role: "Autocorrect",
     size: "2.1 MB",
-    repo: "cfahlgren1/tinyfix-realword",
+    repo: "cfahlgren1/tinyfix",
     caveat: "Catches about a third of wrong-word typos, and is right about 94% of the time when it fixes one.",
   },
   tinynext: {
     name: "tinynext",
     role: "Suggestions",
     size: "1 MB",
-    repo: "cfahlgren1/enron-autocomplete",
+    repo: "cfahlgren1/tinynext",
     caveat: "Trained on office email, so it sounds like a memo.",
   },
 } as const satisfies Record<ModelId, ModelBrand>;

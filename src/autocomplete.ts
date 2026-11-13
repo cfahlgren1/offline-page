@@ -36,7 +36,7 @@ function topPick(logits: Float32Array): { id: number; probability: number } {
   return { id, probability: 1 / total };
 }
 
-/** Character-level next-words model from cfahlgren1/enron-autocomplete. */
+/** Character-level next-words model from cfahlgren1/tinynext (a copy of cfahlgren1/enron-autocomplete). */
 export class Autocomplete {
   private readText = "";
   private reading: Reading | undefined;
