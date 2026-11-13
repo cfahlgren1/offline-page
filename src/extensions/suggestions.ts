@@ -77,25 +77,38 @@ export const Suggestions = Extension.create<SuggestionsOptions>({
 
   addProseMirrorPlugins() {
     const options = this.options;
-    let request = 0;
+    // At most one suggestion runs at a time. Keys pressed meanwhile only mark that a newer one is wanted, so a fast
+    // burst of typing asks once for where the cursor ends up instead of queueing a request per key.
+    let running = false;
+    let wanted = false;
 
     const ask = (view: EditorView): void => {
+      if (running) {
+        wanted = true;
+        return;
+      }
       const models = options.getModels();
       const at = contextAtCursor(view.state);
-      const asked = ++request;
       if (!models || !at) return;
       const current = suggestionsKey.getState(view.state);
       if (current && current.context === at.context && current.pos === at.pos) return;
+      running = true;
       models.autocomplete
         .suggest(at.context)
         .then((text) => {
-          if (asked !== request || view.isDestroyed) return;
+          if (view.isDestroyed) return;
           const now = contextAtCursor(view.state);
           if (!now || now.context !== at.context || now.pos !== at.pos) return;
           const meta: Meta = text.length >= MIN_SUGGESTION_CHARS ? { type: "show", ghost: { ...at, text } } : { type: "clear" };
           view.dispatch(view.state.tr.setMeta(suggestionsKey, meta));
         })
-        .catch((error: unknown) => console.error("Suggestion failed", error));
+        .catch((error: unknown) => console.error("Suggestion failed", error))
+        .finally(() => {
+          running = false;
+          if (!wanted || view.isDestroyed) return;
+          wanted = false;
+          ask(view);
+        });
     };
 
     return [

@@ -15,6 +15,8 @@ async function fetchFile(path: string): Promise<Response> {
   return response;
 }
 
+const SPELLING_MIN_CONFIDENCE = 0.55;
+
 const lines = (text: string) => text.split("\n").filter(Boolean);
 const bytes = (response: Response) => response.arrayBuffer().then((buffer) => new Uint8Array(buffer));
 const createSession = (model: Uint8Array) => ort.InferenceSession.create(model, { executionProviders: ["wasm"] });
@@ -39,6 +41,10 @@ export async function loadModels(): Promise<Models> {
     confusions: lines(confusions),
     settings: EAGER_WRONG_WORD,
   });
-  const fixer = new Fixer({ words: parseWordList(words), scorer: wrongWord, weights: WITH_MODEL_WEIGHTS });
+  // 55% instead of the library's 70%. On tinyfix's spelling eval it fixes 71% of misspellings instead of 62%, and
+  // 93.5% of fixes are right instead of 96.6%. Wrong changes to correct email text go from 0.21 to 0.25 per 1,000
+  // words (the library was tuned to stay under 0.5). Code-heavy GitHub text gets worse, which a prose app can accept.
+  // This bar is what lets a doubled-key slip like "sporrt" become "sport" (55% sure).
+  const fixer = new Fixer({ words: parseWordList(words), scorer: wrongWord, weights: { ...WITH_MODEL_WEIGHTS, minConfidence: SPELLING_MIN_CONFIDENCE } });
   return { fixer, wrongWord, autocomplete: new Autocomplete(autocompleteSession) };
 }
