@@ -23,7 +23,7 @@ export interface EditorSetup {
 }
 
 export function createEditor(setup: EditorSetup): Editor {
-  return new Editor({
+  const editor = new Editor({
     element: setup.element,
     content: setup.content,
     contentType: setup.contentType,
@@ -42,4 +42,8 @@ export function createEditor(setup: EditorSetup): Editor {
     ],
     onUpdate: ({ editor }) => setup.onUpdate(editor),
   });
+  // Tiptap applies autofocus on a timer, so a key pressed right after opening a page would be lost. The selection is
+  // already at the end, so focusing now is enough.
+  editor.view.focus();
+  return editor;
 }
