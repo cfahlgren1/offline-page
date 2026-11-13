@@ -20,7 +20,7 @@ for (const [name, viewport] of Object.entries(SIZES)) {
   for (const theme of ["light", "dark"]) {
     const page = await browser.newPage({ viewport, deviceScaleFactor: 2 });
     page.on("pageerror", (error) => console.error(`${name} (${theme}):`, error.message));
-    await page.goto(`file://${brand}src/${name}.html#${theme}`);
+    await page.goto(`file://${brand}src/title.html?id=${name}#${theme}`);
     await page.waitForFunction(() => window.__ready === true, null, { timeout: 10_000 });
     await page.screenshot({ path: `${brand}${name}-${theme}.png` });
     await page.close();
