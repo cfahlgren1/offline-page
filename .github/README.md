@@ -8,7 +8,7 @@
   <a href="https://huggingface.co/cfahlgren1/tinynext">tinynext</a>
 </p>
 
-**offline.page** is a Markdown writing app with autocorrect and autocomplete that run entirely in your browser tab. Two tiny models, about 3 MB together, no server, and once the page has loaded it keeps working with Wi‑Fi off.
+**offline.page** is a Markdown writing app with autocorrect and autocomplete that run entirely in your browser tab. Two tiny models, about 15 MB together, no server, and once the page has loaded it keeps working with Wi‑Fi off.
 
 ## The models
 
@@ -18,12 +18,12 @@
 
 <img alt="tinynext: suggests the next few words in gray" src="../brand/tinynext.png" width="880">
 
-**[tinynext](https://huggingface.co/cfahlgren1/tinynext)** is a character-level model that suggests the next few words in gray. Press Tab to take them. It only shows a suggestion when it’s at least 50% sure.
+**[tinynext](https://huggingface.co/cfahlgren1/tinynext)** suggests the next few words in gray. Press Tab to take them. It’s a 12.5M-parameter transformer that reads up to about 1,500 characters before the cursor and the text after it, and only shows a suggestion when it’s at least 50% sure. About three in four suggestions are right.
 
 ### What to expect
 
 - **Fast, private and offline first, accurate second.** tinyfix catches about a third of wrong-word typos. When it does make a fix, it’s right about 94% of the time.
-- **tinynext sounds like a memo.** It was trained on the Enron email corpus. Weights are on the Hub as [`cfahlgren1/tinynext`](https://huggingface.co/cfahlgren1/tinynext), a copy of [`cfahlgren1/enron-autocomplete`](https://huggingface.co/cfahlgren1/enron-autocomplete).
+- **tinynext is small, so it stays quiet a lot.** It saves about 4% of typing on articles and email and 9% on chat-style messages. It trained on 3B tokens of web articles, chat and Enron email.
 - **Every fix is reversible.** Each one is its own undo step, so Backspace right after a fix undoes it. Purple underlines are fixes from context, blue ones are spelling. Tap one to see what it replaced.
 
 ## Features
@@ -42,7 +42,7 @@ keystroke ─▶ Tiptap (ProseMirror) ─┬─▶ tinyfix   word finished? chec
                                                   └─▶ gray text, Tab to accept
 ```
 
-Both models run with [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/) on WebAssembly, on the main thread, one request at a time. The first visit downloads about 3 MB of models plus the 11 MB WASM runtime (about 3 MB compressed). After that everything comes from the cache.
+Both models run with [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/) on WebAssembly. tinyfix runs on the main thread; tinynext runs in a Web Worker, about 5 ms per suggestion, so typing never waits on it. The first visit downloads about 15 MB of models plus the 11 MB WASM runtime (about 3 MB compressed). After that everything comes from the cache.
 
 ## Development
 
@@ -59,6 +59,6 @@ npm run brand    # re-render the images in brand/ (set CHROMIUM_PATH, or have Ch
 | `src/extensions/suggestions.ts` | Gray suggested text and Tab to accept |
 | `src/extensions/slashMenu.ts` | The `/` block menu |
 | `src/tinyfix/` | Dictionary, typo costs and the wrong-word checker |
-| `src/autocomplete.ts` | tinynext inference |
+| `src/tinynext/` | tinynext's tokenizer, decoding and Web Worker |
 | `scripts/write-service-worker.mjs` | Generates the offline cache after each build |
 | `brand/` | Marks, banners and the HTML they're rendered from |

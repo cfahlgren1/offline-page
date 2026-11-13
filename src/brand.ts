@@ -24,9 +24,9 @@ export const MODELS = {
   tinynext: {
     name: "tinynext",
     role: "Suggestions",
-    size: "1 MB",
+    size: "13 MB",
     repo: "cfahlgren1/tinynext",
-    caveat: "Trained on office email, so it sounds like a memo.",
+    caveat: "Suggests a few words when it’s at least 50% sure, and is right about three times out of four.",
   },
 } as const satisfies Record<ModelId, ModelBrand>;
 

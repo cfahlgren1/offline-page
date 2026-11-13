@@ -1,7 +1,7 @@
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey, type EditorState } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
-import type { Autocompleter } from "../autocompleter";
+import type { TinyNextClient } from "../tinynext/client";
 
 interface Ghost {
   /** The text the model continued from: the document up to the cursor. */
@@ -13,7 +13,7 @@ interface Ghost {
 type Meta = { type: "show"; ghost: Ghost } | { type: "clear" };
 
 export interface SuggestionsOptions {
-  getAutocompleter: () => Autocompleter | null;
+  getTinyNext: () => TinyNextClient | null;
 }
 
 /** How much of the document around the cursor to hand the model. The model itself trims to what it can use. */
@@ -22,7 +22,7 @@ const AFTER_POSITIONS = 600;
 
 /**
  * Shorter suggestions are hidden: on real text most right guesses are 1-3 letter word endings,
- * which aren't worth a Tab and make the gray text flicker. See tinynext/v2/metrics in the model repo.
+ * which aren't worth a Tab and make the gray text flicker. See v2/metrics in the tinynext model repo.
  */
 const MIN_SUGGESTION_CHARS = 4;
 
@@ -33,7 +33,7 @@ export const suggestionsKey = new PluginKey<Ghost | null>("suggestions");
 
 /**
  * The document text before and after the cursor, when the cursor sits at the end of a plain textblock. Suggestions
- * only go there. `context` is the text before; `after` is what follows (the next blocks), for models that use it.
+ * only go there. `context` is the text before; `after` is what follows (the next blocks), which tinynext reads too.
  */
 function contextAtCursor(state: EditorState): { context: string; after: string; pos: number } | null {
   const { $head, empty } = state.selection;
@@ -59,13 +59,13 @@ function ghostElement(text: string): HTMLElement {
   return wrapper;
 }
 
-/** Gray suggested text from the autocomplete model at the end of the current block. Tab accepts it. */
+/** Gray suggested text from tinynext at the end of the current block. Tab accepts it. */
 export const Suggestions = Extension.create<SuggestionsOptions>({
   name: "suggestions",
   priority: 1000,
 
   addOptions() {
-    return { getAutocompleter: () => null };
+    return { getTinyNext: () => null };
   },
 
   addKeyboardShortcuts() {
@@ -97,13 +97,13 @@ export const Suggestions = Extension.create<SuggestionsOptions>({
         wanted = true;
         return;
       }
-      const autocompleter = options.getAutocompleter();
+      const tinynext = options.getTinyNext();
       const at = contextAtCursor(view.state);
-      if (!autocompleter || !at) return;
+      if (!tinynext || !at) return;
       const current = suggestionsKey.getState(view.state);
       if (current && current.context === at.context && current.pos === at.pos) return;
       running = true;
-      autocompleter
+      tinynext
         .suggest(at.context, at.after)
         .then((text) => {
           if (view.isDestroyed) return;

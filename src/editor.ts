@@ -6,8 +6,8 @@ import StarterKit from "@tiptap/starter-kit";
 import { Autocorrect, type AppliedFix } from "./extensions/autocorrect";
 import { SlashMenu } from "./extensions/slashMenu";
 import { Suggestions } from "./extensions/suggestions";
-import type { Autocompleter } from "./autocompleter";
 import type { Models } from "./models";
+import type { TinyNextClient } from "./tinynext/client";
 
 /** Every page starts with a heading, which is its title. */
 const TitledDocument = Document.extend({ content: "heading block*" });
@@ -17,7 +17,7 @@ export interface EditorSetup {
   content: Content;
   contentType: "json" | "markdown";
   getModels: () => Models | null;
-  getAutocompleter: () => Autocompleter | null;
+  getTinyNext: () => TinyNextClient | null;
   onFixClick: (fix: AppliedFix, element: HTMLElement) => void;
   onUpdate: (editor: Editor) => void;
 }
@@ -37,7 +37,7 @@ export function createEditor(setup: EditorSetup): Editor {
       }),
       Markdown,
       Autocorrect.configure({ getModels: setup.getModels, onFixClick: setup.onFixClick }),
-      Suggestions.configure({ getAutocompleter: setup.getAutocompleter }),
+      Suggestions.configure({ getTinyNext: setup.getTinyNext }),
       SlashMenu,
     ],
     onUpdate: ({ editor }) => setup.onUpdate(editor),

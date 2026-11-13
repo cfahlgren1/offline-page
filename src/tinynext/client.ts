@@ -1,6 +1,6 @@
 import type { WorkerReply, WorkerRequest } from "./worker";
 
-/** tinynext v2 in a Web Worker. The main thread only posts text and gets suggestions back. */
+/** tinynext in a Web Worker. The main thread only posts text and gets suggestions back. */
 export class TinyNextClient {
   private readonly worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
   private readonly pending = new Map<number, (text: string) => void>();

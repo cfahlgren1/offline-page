@@ -1,12 +1,10 @@
 import * as ort from "onnxruntime-web";
-import { Autocomplete } from "./autocomplete";
 import { Fixer, WITH_MODEL_WEIGHTS, parseWordList } from "./tinyfix/fixer";
 import { EAGER_WRONG_WORD, WrongWordChecker } from "./tinyfix/wrongWord";
 
 export interface Models {
   fixer: Fixer;
   wrongWord: WrongWordChecker;
-  autocomplete: Autocomplete;
 }
 
 async function fetchFile(path: string): Promise<Response> {
@@ -21,18 +19,17 @@ const lines = (text: string) => text.split("\n").filter(Boolean);
 const bytes = (response: Response) => response.arrayBuffer().then((buffer) => new Uint8Array(buffer));
 const createSession = (model: Uint8Array) => ort.InferenceSession.create(model, { executionProviders: ["wasm"] });
 
-/** Loads both models and the dictionary. After the first visit the service worker serves all of it from the cache. */
+/** Loads tinyfix and its dictionary. After the first visit the service worker serves all of it from the cache. */
 export async function loadModels(): Promise<Models> {
-  const [wrongWordModel, autocompleteModel, words, vocabulary, confusions] = await Promise.all([
+  const [wrongWordModel, words, vocabulary, confusions] = await Promise.all([
     fetchFile("models/wrong-word.onnx").then(bytes),
-    fetchFile("models/autocomplete.onnx").then(bytes),
     fetchFile("models/words.txt").then((response) => response.text()),
     fetchFile("models/wrong-word-vocab.txt").then((response) => response.text()),
     fetchFile("models/wrong-word-confusions.txt").then((response) => response.text()),
   ]);
   // One thread, so the page needs no cross-origin isolation headers. ONNX Runtime loads its own WASM file, which the build bundles.
   ort.env.wasm.numThreads = 1;
-  const [wrongWordSession, autocompleteSession] = await Promise.all([createSession(wrongWordModel), createSession(autocompleteModel)]);
+  const wrongWordSession = await createSession(wrongWordModel);
 
   const wrongWord = new WrongWordChecker({
     ort,
@@ -46,5 +43,5 @@ export async function loadModels(): Promise<Models> {
   // words (the library was tuned to stay under 0.5). Code-heavy GitHub text gets worse, which a prose app can accept.
   // This bar is what lets a doubled-key slip like "sporrt" become "sport" (55% sure).
   const fixer = new Fixer({ words: parseWordList(words), scorer: wrongWord, weights: { ...WITH_MODEL_WEIGHTS, minConfidence: SPELLING_MIN_CONFIDENCE } });
-  return { fixer, wrongWord, autocomplete: new Autocomplete(autocompleteSession) };
+  return { fixer, wrongWord };
 }

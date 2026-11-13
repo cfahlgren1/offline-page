@@ -1,7 +1,7 @@
 import type * as Ort from "onnxruntime-web";
 import type { Tokenizer } from "./tokenizer";
 
-/** Settings shared with tinynext/v2/eval.py, so the app decodes exactly the way the model was measured. */
+/** Settings shared with v2/eval.py in the tinynext model repo, so the app decodes exactly the way the model was measured. */
 export const CUTOFF = 0.5;
 const MAX_WORDS = 6;
 const MAX_CHARS = 48;
