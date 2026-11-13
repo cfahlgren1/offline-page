@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="A writing app with autocorrect and autocomplete that work in airplane mode." />
+    <meta name="theme-color" content="#fbfbf9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111112" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <title>offline.page</title>
+  </head>
+  <body class="flex min-h-dvh flex-col">
+    <header class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-4 text-[13px] text-sub sm:px-8 sm:py-[22px]">
+      <div class="relative min-w-0">
+        <button id="docs-button" class="group flex max-w-full min-w-0 items-baseline gap-2" type="button" aria-haspopup="true" aria-expanded="false">
+          <span id="doc-title" class="max-w-[22ch] truncate font-semibold text-ink sm:max-w-[40ch]">Untitled</span>
+          <span class="flex-none hover:text-ink">— Pages</span>
+        </button>
+        <div id="docs-menu" class="absolute top-[calc(100%+10px)] -left-2.5 z-20 max-h-[min(460px,70vh)] w-[min(340px,calc(100vw-32px))] overflow-auto overscroll-contain rounded-[14px] bg-surface p-1.5 shadow-float" hidden></div>
+      </div>
+      <div class="flex flex-wrap items-center gap-x-[18px] gap-y-2">
+        <span id="save-chip" class="group inline-flex items-center gap-1.5 rounded-full bg-chip px-[11px] py-[5px] text-xs font-medium data-[error]:text-error">
+          <i class="size-1.5 flex-none rounded-full bg-ok group-data-[error]:bg-error"></i><span id="save-status">Saved on this device</span>
+        </span>
+        <button id="export" class="min-h-7 hover:text-ink" type="button">Export .md</button>
+        <button id="copy" class="min-h-7 hover:text-ink" type="button">Copy</button>
+        <button id="theme" class="inline-flex min-h-7 min-w-7 items-center justify-center hover:text-ink" type="button" aria-label="Switch light or dark">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.6A5.6 5.6 0 0 1 6.4 2.5a5.6 5.6 0 1 0 7.1 7.1Z" fill="currentColor" /></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="mx-auto w-full max-w-[712px] flex-1 px-4 pt-10 pb-30 sm:pt-[72px]">
+      <div id="meta" class="mb-[22px] min-h-[1.4em] text-[13px] tracking-[0.01em] text-faint"></div>
+      <div id="editor"></div>
+    </main>
+
+    <footer class="flex flex-wrap items-center justify-center gap-x-7 gap-y-2 bg-linear-to-b from-transparent to-paper to-40% px-4 pt-[18px] pb-[calc(18px+env(safe-area-inset-bottom))] text-[12.5px] text-faint [@media(min-height:700px)]:sticky [@media(min-height:700px)]:bottom-0">
+      <span><b class="font-medium text-sub">On device.</b> Nothing you type leaves this tab.</span>
+      <span id="models" class="group inline-flex flex-wrap items-center gap-x-4 gap-y-1 data-[error]:text-error">
+        <a id="tinyfix-link" class="inline-flex items-center gap-1.5 hover:text-sub" target="_blank" rel="noopener">
+          <i class="size-[7px] rounded-full bg-context"></i><b class="font-semibold text-sub">tinyfix</b><span id="tinyfix-size"></span>
+        </a>
+        <a id="tinynext-link" class="inline-flex items-center gap-1.5 hover:text-sub" target="_blank" rel="noopener">
+          <i class="size-[7px] rounded-full border border-dashed border-faint"></i><b class="font-semibold text-sub">tinynext</b><span id="tinynext-size"></span>
+        </a>
+        <span id="model-status">loading…</span>
+      </span>
+      <span id="offline-status" class="inline-flex items-center gap-1.5" hidden><i class="size-1.5 rounded-full bg-ok"></i>Works offline</span>
+      <span>tinynext was trained on office email.</span>
+    </footer>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
