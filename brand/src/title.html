@@ -1,20 +1,24 @@
 <!doctype html><html><head><meta charset="utf-8"><script src="dither.js"></script><link rel="stylesheet" href="brand.css"><style>
 .content{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 48px 8px}
 .name{font-weight:700;letter-spacing:-.05em;line-height:1}
-.name em{font-style:normal;color:var(--faint)}
+.name em{font-style:normal;color:var(--purple)}
 .line{color:var(--sub);letter-spacing:-.01em;margin-top:18px}
 </style></head><body>
 <canvas class="layer" id="band"></canvas>
 <div class="content"><div class="name" id="name"></div><div class="line" id="line"></div></div>
 <script>
-// One template for every brand image: a centered name and one line over a dithered wave field. Dark only.
+// One template for every brand image: a centered name and one line over a dithered wave field. Mono, light.
 const IMAGES = {
   banner:   { name: "offline<em>.page</em>", line: "Autocorrect and autocomplete that work in airplane mode.", size: 88 },
   social:   { name: "offline<em>.page</em>", line: "Writes with you, even in airplane mode.", size: 76 },
   tinyfix:  { name: "tinyfix", line: "Autocorrect that reads both sides of a word.", size: 104 },
   tinynext: { name: "tinynext", line: "Suggests the next few words. Tab to take them.", size: 104 },
 };
-const id = new URLSearchParams(location.search).get("id");
+const params = new URLSearchParams(location.search);
+const id = params.get("id");
+// The brand is mono. Optional ?accent=RRGGBB tries another color.
+const accent = params.get("accent") ? `#${params.get("accent")}` : null;
+document.documentElement.style.setProperty("--purple", accent ?? (location.hash === "#dark" ? "#d1d1d6" : "#3a3a3c"));
 const image = IMAGES[id];
 const name = document.getElementById("name");
 name.innerHTML = image.name;
@@ -39,7 +43,7 @@ document.fonts.ready.then(() => {
       const clear = smoothstep(0.8, 1.45, d);
       return waves(px, py, PHASE[id]) * clear * 0.85;
     });
-  }, { cell: 3, supersample: 1, gap: 0.7, color: "#a36af5" });
+  }, { cell: 3, supersample: 1, gap: 0.7, color: accent ?? (theme === "dark" ? "#d1d1d6" : "#3a3a3c") });
   window.__ready = true;
 });
 </script>
