@@ -1,20 +1,48 @@
-<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="brand.css"><script>if (location.hash === "#dark") document.documentElement.classList.add("dark");</script><style>
-body{display:flex;align-items:center;gap:40px;padding:0 48px}
-.l{flex:1;min-width:0}
-.name{display:flex;align-items:center;gap:16px;font-size:54px;font-weight:700;letter-spacing:-.04em}
-.name img{width:56px;height:56px}
-.role{font-size:20px;color:var(--sub);letter-spacing:-.01em;margin:14px 0 22px;line-height:1.3}
-.card{width:400px;flex:none;background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:28px 30px;font-family:var(--serif);font-size:19px;line-height:1.6;color:var(--body)}
-.note{display:flex;align-items:center;gap:7px;margin-top:14px;font:600 11.5px var(--sans);letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
-.note i{width:7px;height:7px;border-radius:50%;background:var(--accent)}
-.note span{margin-left:auto;color:var(--faint);font-weight:500;letter-spacing:0;text-transform:none}
-.of{font-size:13px;color:var(--faint);margin-top:12px}
+<!doctype html><html><head><meta charset="utf-8"><script src="dither.js"></script><link rel="stylesheet" href="brand.css"><style>
+.content{display:grid;grid-template-columns:400px 1fr;align-items:center;padding:0 0 0 56px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.name{font-size:76px;font-weight:700;letter-spacing:-.05em;line-height:.9}
+.desc{font-size:18px;line-height:1.4;color:var(--sub);margin:16px 0 26px;max-width:310px}
+.foot{font-size:13px;color:var(--faint);margin-top:14px}
+.art{position:relative;padding-left:40px;padding-top:70px}
+.word{font-family:var(--serif);font-size:118px;line-height:1;letter-spacing:-.015em;color:var(--ink)}
+.word .fixed{text-decoration-thickness:6px;text-underline-offset:16px}
+.label{display:flex;align-items:center;gap:10px;margin-top:34px}
+.label i{width:8px;height:8px;border-radius:50%;background:var(--purple)}
+.label .eyebrow{color:var(--purple)}
+.label .eyebrow + .eyebrow{color:var(--faint)}
 </style></head><body>
-<div class="l">
-  <div class="name"><img src="../marks/tinyfix.svg">tinyfix</div>
-  <div class="role">Autocorrect that reads the words on both sides, in your browser.</div>
-  <div class="stats"><span class="stat"><b>1.9M</b> params</span><span class="stat"><b>2.1 MB</b></span><span class="stat"><b>~3 ms</b></span><span class="stat"><b>94%</b> of fixes right</span></div>
-  <div class="of">Part of offline.page</div>
+<canvas class="layer" id="glow"></canvas><canvas class="layer" id="old"></canvas>
+<div class="content">
+  <div>
+    <div class="top"><img class="mark" src="../marks/tinyfix.svg" width="40" height="40"><span class="eyebrow">offline.page · model 01</span></div>
+    <div class="name">tinyfix</div>
+    <div class="desc">Autocorrect that reads the words on both sides of a typo.</div>
+    <div class="specs"><span><b>1.9M</b> params</span><span><b>2.1</b> MB</span><span><b>~3</b> ms</span><span><b>94%</b> precise</span></div>
+    <div class="foot">Catches about a third of wrong-word typos.</div>
+  </div>
+  <div class="art">
+    <div class="word"><span class="fixed" id="fixed">from</span></div>
+    <div class="label"><i></i><span class="eyebrow">fixed from context</span><span class="eyebrow">form → from · 3 ms</span></div>
+  </div>
 </div>
-<div class="card"><div style="--accent:var(--purple)">I got a letter <span class="fixed">from</span> the bank today.<div class="note"><i></i>Fixed from context<span>form → from · 3 ms</span></div></div></div>
+<script>
+document.fonts.ready.then(() => {
+  const dark = theme === "dark";
+  dither(document.getElementById("glow"), (ctx, g) => {
+    ctx.fillStyle = glow(ctx, g.width * 0.98, g.height * -0.25, g.width * 0.42, dark ? 0.5 : 0.36);
+    ctx.fillRect(0, 0, g.width, g.height);
+  }, { cell: 4, supersample: 1, color: dark ? "#3d2266" : "#d6c3f2" });
+
+  // The typo it replaced, lifting off the line as pixels.
+  const word = document.getElementById("fixed").getBoundingClientRect();
+  dither(document.getElementById("old"), (ctx, g) => {
+    ctx.font = `${g.x(118)}px "Iowan Old Style", Georgia, serif`;
+    const x = g.x(word.left + 38), baseline = g.x(word.top + 6);
+    ctx.fillStyle = fade(ctx, 0, baseline - g.x(90), 0, baseline, [[0, 0], [0.45, 0.35], [1, 0.95]]);
+    ctx.fillText("form", x, baseline);
+  }, { cell: 2.5, gap: 0.5, color: dark ? "#b06bff" : "#7b1fe0" });
+  window.__ready = true;
+});
+</script>
 </body></html>

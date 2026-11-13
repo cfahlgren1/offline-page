@@ -15,22 +15,19 @@
 
 ## The models
 
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <img src="../brand/marks/tinyfix.svg" width="44" alt=""><br>
-      <b>tinyfix</b> · autocorrect<br>
-      <sub>1.9M params · 2.1 MB · ~3 ms per check</sub>
-      <p>Fixes misspellings like “recieve” as you finish the word. It also catches real words in the wrong place, like “form” for “from”, by reading the words on both sides, so those fixes land about two words later.</p>
-    </td>
-    <td width="50%" valign="top">
-      <img src="../brand/marks/tinynext.svg" width="44" alt=""><br>
-      <b>tinynext</b> · suggestions<br>
-      <sub>944K params · 0.98 MB · ~4 ms per suggestion</sub>
-      <p>A character-level model that suggests the next few words in gray. Press Tab to take them. It only shows a suggestion when it’s at least 50% sure.</p>
-    </td>
-  </tr>
-</table>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../brand/tinyfix-dark.png">
+  <img alt="tinyfix: autocorrect that reads the words on both sides of a typo" src="../brand/tinyfix-light.png" width="880">
+</picture>
+
+**[tinyfix](https://huggingface.co/cfahlgren1/tinyfix-realword)** fixes misspellings like “recieve” as you finish the word. It also catches real words in the wrong place, like “form” for “from”, by reading the words on both sides, so those fixes land about two words later.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../brand/tinynext-dark.png">
+  <img alt="tinynext: suggests the next few words in gray" src="../brand/tinynext-light.png" width="880">
+</picture>
+
+**[tinynext](https://huggingface.co/cfahlgren1/enron-autocomplete)** is a character-level model that suggests the next few words in gray. Press Tab to take them. It only shows a suggestion when it’s at least 50% sure.
 
 ### What to expect
 
