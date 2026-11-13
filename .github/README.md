@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="../brand/banner-dark.png">
-    <img alt="offline.page: autocorrect and autocomplete that work in airplane mode" src="../brand/banner-light.png" width="880">
-  </picture>
+  <img alt="offline.page: autocorrect and autocomplete that work in airplane mode" src="../brand/banner.png" width="880">
 </p>
 
 <p align="center">
@@ -15,17 +12,11 @@
 
 ## The models
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../brand/tinyfix-dark.png">
-  <img alt="tinyfix: autocorrect that reads the words on both sides of a typo" src="../brand/tinyfix-light.png" width="880">
-</picture>
+<img alt="tinyfix: autocorrect that reads the words on both sides of a typo" src="../brand/tinyfix.png" width="880">
 
 **[tinyfix](https://huggingface.co/cfahlgren1/tinyfix-realword)** fixes misspellings like “recieve” as you finish the word. It also catches real words in the wrong place, like “form” for “from”, by reading the words on both sides, so those fixes land about two words later.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="../brand/tinynext-dark.png">
-  <img alt="tinynext: suggests the next few words in gray" src="../brand/tinynext-light.png" width="880">
-</picture>
+<img alt="tinynext: suggests the next few words in gray" src="../brand/tinynext.png" width="880">
 
 **[tinynext](https://huggingface.co/cfahlgren1/enron-autocomplete)** is a character-level model that suggests the next few words in gray. Press Tab to take them. It only shows a suggestion when it’s at least 50% sure.
 

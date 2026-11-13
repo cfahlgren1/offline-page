@@ -7,12 +7,12 @@
 <canvas class="layer" id="band"></canvas>
 <div class="content"><div class="name" id="name"></div><div class="line" id="line"></div></div>
 <script>
-// One template for every brand image: a centered name, one line, and a dithered band along the bottom.
+// One template for every brand image: a centered name and one line over a dithered wave field. Dark only.
 const IMAGES = {
-  banner:   { name: "offline<em>.page</em>", line: "Autocorrect and autocomplete that work in airplane mode.", size: 88, color: ["#7b1fe0", "#a36af5"] },
-  social:   { name: "offline<em>.page</em>", line: "Writes with you, even in airplane mode.", size: 76, color: ["#7b1fe0", "#a36af5"] },
-  tinyfix:  { name: "tinyfix", line: "Autocorrect that reads both sides of a word.", size: 104, color: ["#7b1fe0", "#a36af5"] },
-  tinynext: { name: "tinynext", line: "Suggests the next few words. Tab to take them.", size: 104, color: ["#8e8e93", "#8e8e93"] },
+  banner:   { name: "offline<em>.page</em>", line: "Autocorrect and autocomplete that work in airplane mode.", size: 88 },
+  social:   { name: "offline<em>.page</em>", line: "Writes with you, even in airplane mode.", size: 76 },
+  tinyfix:  { name: "tinyfix", line: "Autocorrect that reads both sides of a word.", size: 104 },
+  tinynext: { name: "tinynext", line: "Suggests the next few words. Tab to take them.", size: 104 },
 };
 const id = new URLSearchParams(location.search).get("id");
 const image = IMAGES[id];
@@ -23,46 +23,23 @@ const line = document.getElementById("line");
 line.textContent = image.line;
 line.style.fontSize = `${Math.round(image.size * 0.22)}px`;
 
-// Patterns, each 0..1 brightness at (u, v). The center stays clear for the name.
-const TAU = Math.PI * 2;
-const hash = (n) => { const x = Math.sin(n * 127.1) * 43758.5453; return x - Math.floor(x); };
-const PATTERNS = {
-  // A signal rippling out from the middle.
-  rings: (u, v, px, py, w, h) => {
-    const r = Math.hypot(px - w / 2, py - h / 2);
-    return (0.5 + 0.5 * Math.sin((r / 34) * TAU)) * smoothstep(0, w * 0.75, r * 1.6);
-  },
-  // Two wave fields bending through each other.
-  waves: (u, v, px, py, w, h) => {
-    const a = Math.sin(px / 38 + Math.sin(py / 60) * 2.2);
-    const b = Math.sin(py / 26 - px / 90 + Math.cos(px / 140) * 1.5);
-    return 0.5 + 0.32 * a + 0.22 * b;
-  },
-  // Rows of word-sized fragments that thin out to the right, like a suggestion trailing off.
-  lines: (u, v, px, py, w, h) => {
-    const row = Math.floor(py / 22), inRow = py % 22;
-    if (inRow < 6 || inRow > 15) return 0;
-    let x = 0, word = 0;
-    while (x <= px) { x += 30 + hash(row * 31 + word) * 80; word++; }
-    const gap = x - px < 12;
-    return gap ? 0 : 0.95 - u * 0.9 + (hash(row) - 0.5) * 0.2;
-  },
+// The wave field from the tinyfix image, shifted per image so each one is its own but they read as a family.
+const PHASE = { banner: 0, social: 1.7, tinyfix: 0, tinynext: 3.1 };
+const waves = (px, py, phase) => {
+  const a = Math.sin(px / 38 + Math.sin(py / 60 + phase) * 2.2 + phase);
+  const b = Math.sin(py / 26 - px / 90 + Math.cos(px / 140 - phase) * 1.5);
+  return 0.5 + 0.32 * a + 0.22 * b;
 };
-IMAGES.banner.pattern = IMAGES.social.pattern = "rings";
-IMAGES.tinyfix.pattern = "waves";
-IMAGES.tinynext.pattern = "lines";
 
 document.fonts.ready.then(() => {
-  const dark = theme === "dark";
   const { width: w, height: h } = document.body.getBoundingClientRect();
-  const pattern = PATTERNS[image.pattern];
   dither(document.getElementById("band"), (ctx, g) => {
     paintField(ctx, g, (u, v, px, py) => {
       const d = Math.hypot((u - 0.5) / 0.4, (v - 0.48) / 0.31);
       const clear = smoothstep(0.8, 1.45, d);
-      return pattern(u, v, px, py, w, h) * clear * (dark ? 0.85 : 0.7);
+      return waves(px, py, PHASE[id]) * clear * 0.85;
     });
-  }, { cell: 3, supersample: 1, gap: 0.7, color: image.color[dark ? 1 : 0] });
+  }, { cell: 3, supersample: 1, gap: 0.7, color: "#a36af5" });
   window.__ready = true;
 });
 </script>
