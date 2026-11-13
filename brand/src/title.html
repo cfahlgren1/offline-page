@@ -1,7 +1,12 @@
 <!doctype html><html><head><meta charset="utf-8"><script src="dither.js"></script><link rel="stylesheet" href="brand.css"><style>
 .content{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 48px 8px}
 .name{font-weight:700;letter-spacing:-.05em;line-height:1}
-.name em{font-style:normal;color:var(--purple)}
+/* The second half of each name hints at what it does: .page is the paper, fix is a corrected word, next is a suggestion. */
+.name .write{font-family:var(--serif);font-weight:500;letter-spacing:-.02em;margin-left:.02em}
+.name .page{font-style:italic;color:var(--ink)}
+.name .fix{color:#7b1fe0;text-decoration:underline;text-decoration-thickness:.055em;text-underline-offset:.13em;text-decoration-color:rgb(123 31 224 / .55)}
+.name .next{color:#a1a1a6}
+.name .caret{display:inline-block;width:.045em;height:.82em;background:#0066cc;vertical-align:-.04em;margin:0 .03em 0 .05em;border-radius:1px}
 .line{color:var(--sub);letter-spacing:-.01em;margin-top:18px}
 </style></head><body>
 <canvas class="layer" id="band"></canvas>
@@ -9,10 +14,10 @@
 <script>
 // One template for every brand image: a centered name and one line over a dithered wave field. Mono, light.
 const IMAGES = {
-  banner:   { name: "offline<em>.page</em>", line: "Autocorrect and autocomplete that work in airplane mode.", size: 88 },
-  social:   { name: "offline<em>.page</em>", line: "Writes with you, even in airplane mode.", size: 76 },
-  tinyfix:  { name: "tinyfix", line: "Autocorrect that reads both sides of a word.", size: 104 },
-  tinynext: { name: "tinynext", line: "Suggests the next few words. Tab to take them.", size: 104 },
+  banner:   { name: 'offline<span class="write page">.page</span>', line: "Autocorrect and autocomplete that work in airplane mode.", size: 88 },
+  social:   { name: 'offline<span class="write page">.page</span>', line: "Writes with you, even in airplane mode.", size: 76 },
+  tinyfix:  { name: 'tiny<span class="write fix">fix</span>', line: "Autocorrect that reads both sides of a word.", size: 104 },
+  tinynext: { name: 'tiny<span class="caret"></span><span class="write next">next</span>', line: "Suggests the next few words. Tab to take them.", size: 104 },
 };
 const params = new URLSearchParams(location.search);
 const id = params.get("id");
