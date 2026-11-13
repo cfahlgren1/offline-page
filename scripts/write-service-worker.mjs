@@ -12,9 +12,13 @@ function listFiles(directory) {
   });
 }
 
+// Opt-in models (tinynext v2, about 14 MB) aren't downloaded for everyone up front. They're cached the first time
+// they're fetched, so they still work offline after one use.
+const ON_DEMAND = /^models\/tinynext-v2\//;
+
 const files = listFiles(dist)
   .map((path) => relative(dist, path))
-  .filter((path) => path !== "sw.js" && !path.endsWith(".DS_Store"))
+  .filter((path) => path !== "sw.js" && !path.endsWith(".DS_Store") && !ON_DEMAND.test(path))
   .sort();
 
 // The cache name changes whenever any file does, so a new deploy replaces the old cache in one step.
@@ -44,11 +48,22 @@ self.addEventListener("activate", (event) => {
 // Page loads get index.html: hosts like HF Spaces answer "/" with a redirect, and a redirected response can't be served for a navigation.
 const MATCH = { ignoreSearch: true, ignoreVary: true };
 
+/** Files not cached at install (opt-in models) are kept after their first successful fetch. */
+function fetchAndKeep(request) {
+  return fetch(request).then((response) => {
+    if (response.ok && new URL(request.url).pathname.includes("/models/")) {
+      const copy = response.clone();
+      caches.open(CACHE).then((cache) => cache.put(request, copy));
+    }
+    return response;
+  });
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
   const lookup = caches.match(request.mode === "navigate" ? "./index.html" : request, MATCH);
-  event.respondWith(lookup.then((cached) => cached ?? fetch(request)));
+  event.respondWith(lookup.then((cached) => cached ?? fetchAndKeep(request)));
 });
 `;
 

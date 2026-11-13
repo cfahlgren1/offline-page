@@ -1,10 +1,10 @@
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey, type EditorState } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
-import type { Models } from "../models";
+import type { Autocompleter } from "../autocompleter";
 
 interface Ghost {
-  /** The text the model continued from: the block up to the cursor. */
+  /** The text the model continued from: the document up to the cursor. */
   context: string;
   text: string;
   pos: number;
@@ -13,8 +13,12 @@ interface Ghost {
 type Meta = { type: "show"; ghost: Ghost } | { type: "clear" };
 
 export interface SuggestionsOptions {
-  getModels: () => Models | null;
+  getAutocompleter: () => Autocompleter | null;
 }
+
+/** How much of the document around the cursor to hand the model. The model itself trims to what it can use. */
+const BEFORE_POSITIONS = 2400;
+const AFTER_POSITIONS = 600;
 
 /**
  * Shorter suggestions are hidden: on real text most right guesses are 1-3 letter word endings,
@@ -27,14 +31,20 @@ const SLASH_COMMAND = /(^|\s)\/\S*$/;
 
 export const suggestionsKey = new PluginKey<Ghost | null>("suggestions");
 
-/** The block text before the cursor, when the cursor sits at the end of a plain textblock. Suggestions only go there. */
-function contextAtCursor(state: EditorState): { context: string; pos: number } | null {
+/**
+ * The document text before and after the cursor, when the cursor sits at the end of a plain textblock. Suggestions
+ * only go there. `context` is the text before; `after` is what follows (the next blocks), for models that use it.
+ */
+function contextAtCursor(state: EditorState): { context: string; after: string; pos: number } | null {
   const { $head, empty } = state.selection;
   if (!empty || !$head.parent.isTextblock || $head.parent.type.spec.code) return null;
   if ($head.parentOffset !== $head.parent.content.size) return null;
-  const context = $head.parent.textBetween(0, $head.parentOffset, undefined, "\n");
-  if (!context.trim() || SLASH_COMMAND.test(context)) return null;
-  return { context, pos: $head.pos };
+  const block = $head.parent.textBetween(0, $head.parentOffset, undefined, "\n");
+  if (!block.trim() || SLASH_COMMAND.test(block)) return null;
+  const { doc } = state;
+  const context = doc.textBetween(Math.max(0, $head.pos - BEFORE_POSITIONS), $head.pos, "\n", "\n");
+  const after = doc.textBetween($head.pos, Math.min(doc.content.size, $head.pos + AFTER_POSITIONS), "\n", "\n").trim();
+  return { context, after, pos: $head.pos };
 }
 
 function ghostElement(text: string): HTMLElement {
@@ -55,7 +65,7 @@ export const Suggestions = Extension.create<SuggestionsOptions>({
   priority: 1000,
 
   addOptions() {
-    return { getModels: () => null };
+    return { getAutocompleter: () => null };
   },
 
   addKeyboardShortcuts() {
@@ -87,19 +97,19 @@ export const Suggestions = Extension.create<SuggestionsOptions>({
         wanted = true;
         return;
       }
-      const models = options.getModels();
+      const autocompleter = options.getAutocompleter();
       const at = contextAtCursor(view.state);
-      if (!models || !at) return;
+      if (!autocompleter || !at) return;
       const current = suggestionsKey.getState(view.state);
       if (current && current.context === at.context && current.pos === at.pos) return;
       running = true;
-      models.autocomplete
-        .suggest(at.context)
+      autocompleter
+        .suggest(at.context, at.after)
         .then((text) => {
           if (view.isDestroyed) return;
           const now = contextAtCursor(view.state);
           if (!now || now.context !== at.context || now.pos !== at.pos) return;
-          const meta: Meta = text.length >= MIN_SUGGESTION_CHARS ? { type: "show", ghost: { ...at, text } } : { type: "clear" };
+          const meta: Meta = text.length >= MIN_SUGGESTION_CHARS ? { type: "show", ghost: { context: at.context, pos: at.pos, text } } : { type: "clear" };
           view.dispatch(view.state.tr.setMeta(suggestionsKey, meta));
         })
         .catch((error: unknown) => console.error("Suggestion failed", error))

@@ -1,6 +1,7 @@
 import serifFont from "@fontsource-variable/newsreader/files/newsreader-latin-opsz-normal.woff2?url";
 import type { Editor, JSONContent } from "@tiptap/core";
 import { MODELS, hubUrl, type ModelId } from "./brand";
+import { chosenVersion, loadV2Autocompleter, v1Autocompleter, type Autocompleter } from "./autocompleter";
 import { createEditor } from "./editor";
 import { revertFix } from "./extensions/autocorrect";
 import { FixPopover } from "./fixPopover";
@@ -37,6 +38,8 @@ const ui = {
 };
 
 let models: Models | null = null;
+let autocompleter: Autocompleter | null = null;
+const autocompleteVersion = chosenVersion();
 let editor: Editor | null = null;
 let current: DocRecord | null = null;
 let saveTimer: number | undefined;
@@ -99,6 +102,7 @@ function open(doc: DocRecord, source: OpenContent = { type: "json", content: doc
     content: source.content,
     contentType: source.type,
     getModels: () => models,
+    getAutocompleter: () => autocompleter,
     onFixClick: (fix, anchor) => popover.show(fix, anchor),
     onUpdate: () => {
       renderMeta();
@@ -271,11 +275,27 @@ function renderModelLinks(): void {
   }
 }
 
+/** Exposed for the latency checks in tinynext/v2: milliseconds per suggestion, measured in the v2 worker. */
+declare global {
+  interface Window {
+    offlinePageDebug?: { autocomplete: string; v2Timings?: number[] };
+  }
+}
+
 async function startModels(): Promise<void> {
   const began = performance.now();
   try {
+    const v2 = autocompleteVersion === "v2" ? loadV2Autocompleter() : null;
     models = await loadModels();
-    ui.modelStatus.textContent = `ready in ${Math.round(performance.now() - began)} ms`;
+    if (v2) {
+      const loaded = await v2;
+      autocompleter = loaded.autocompleter;
+      window.offlinePageDebug = { autocomplete: "v2", v2Timings: loaded.client.timings };
+    } else {
+      autocompleter = v1Autocompleter(models.autocomplete);
+      window.offlinePageDebug = { autocomplete: "v1" };
+    }
+    ui.modelStatus.textContent = `${autocompleter.label} · ready in ${Math.round(performance.now() - began)} ms`;
   } catch (error) {
     ui.modelStatus.textContent = "couldn’t load. Writing and saving still work.";
     ui.models.toggleAttribute("data-error", true);

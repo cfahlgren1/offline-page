@@ -6,6 +6,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { Autocorrect, type AppliedFix } from "./extensions/autocorrect";
 import { SlashMenu } from "./extensions/slashMenu";
 import { Suggestions } from "./extensions/suggestions";
+import type { Autocompleter } from "./autocompleter";
 import type { Models } from "./models";
 
 /** Every page starts with a heading, which is its title. */
@@ -16,6 +17,7 @@ export interface EditorSetup {
   content: Content;
   contentType: "json" | "markdown";
   getModels: () => Models | null;
+  getAutocompleter: () => Autocompleter | null;
   onFixClick: (fix: AppliedFix, element: HTMLElement) => void;
   onUpdate: (editor: Editor) => void;
 }
@@ -35,7 +37,7 @@ export function createEditor(setup: EditorSetup): Editor {
       }),
       Markdown,
       Autocorrect.configure({ getModels: setup.getModels, onFixClick: setup.onFixClick }),
-      Suggestions.configure({ getModels: setup.getModels }),
+      Suggestions.configure({ getAutocompleter: setup.getAutocompleter }),
       SlashMenu,
     ],
     onUpdate: ({ editor }) => setup.onUpdate(editor),
