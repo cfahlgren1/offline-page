@@ -16,6 +16,12 @@ export interface SuggestionsOptions {
   getModels: () => Models | null;
 }
 
+/**
+ * Shorter suggestions are hidden: on real text most right guesses are 1-3 letter word endings,
+ * which aren't worth a Tab and make the gray text flicker. See tinynext/v2/metrics in the model repo.
+ */
+const MIN_SUGGESTION_CHARS = 4;
+
 /** While the slash menu is open, the text before the cursor is a command, not writing. */
 const SLASH_COMMAND = /(^|\s)\/\S*$/;
 
@@ -86,7 +92,7 @@ export const Suggestions = Extension.create<SuggestionsOptions>({
           if (asked !== request || view.isDestroyed) return;
           const now = contextAtCursor(view.state);
           if (!now || now.context !== at.context || now.pos !== at.pos) return;
-          const meta: Meta = text ? { type: "show", ghost: { ...at, text } } : { type: "clear" };
+          const meta: Meta = text.length >= MIN_SUGGESTION_CHARS ? { type: "show", ghost: { ...at, text } } : { type: "clear" };
           view.dispatch(view.state.tr.setMeta(suggestionsKey, meta));
         })
         .catch((error: unknown) => console.error("Suggestion failed", error));
