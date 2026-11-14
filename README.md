@@ -4,8 +4,7 @@ emoji: ✈️
 colorFrom: purple
 colorTo: gray
 sdk: static
-app_build_command: npm run build
-app_file: dist/index.html
+app_file: index.html
 pinned: false
 short_description: A writing app with autocorrect that works in airplane mode
 models:
