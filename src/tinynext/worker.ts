@@ -4,13 +4,24 @@ import * as ort from "onnxruntime-web";
 import { Suggester, type ModelConfig } from "./suggest";
 import { Tokenizer } from "./tokenizer";
 
-export type WorkerRequest = { type: "load"; base: string } | { type: "suggest"; id: number; before: string; after: string };
+/** Everything the worker needs, downloaded by the page (see client.ts for why the worker doesn't fetch). */
+export interface ModelFiles {
+  graph: ArrayBuffer;
+  weights: ArrayBuffer;
+  manifest: WeightsManifest;
+  config: ModelConfig;
+  tokenizer: unknown;
+  /** onnxruntime-web's WebAssembly binary. */
+  runtime: ArrayBuffer;
+}
+
+export type WorkerRequest = { type: "load"; files: ModelFiles } | { type: "suggest"; id: number; before: string; after: string };
 export type WorkerReply =
   | { type: "loaded"; milliseconds: number }
   | { type: "failed"; error: string }
   | { type: "suggestion"; id: number; text: string; milliseconds: number };
 
-interface WeightsManifest {
+export interface WeightsManifest {
   block: number;
   f32_bytes: number;
   tensors: Array<{ count: number; f32_offset: number; q_offset: number; scale_offset: number }>;
@@ -28,12 +39,6 @@ function expand(manifest: WeightsManifest, q8: ArrayBuffer): Uint8Array {
   return new Uint8Array(out.buffer);
 }
 
-async function fetchOk(url: string): Promise<Response> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Couldn't load ${url} (${response.status}).`);
-  return response;
-}
-
 let suggester: Suggester | null = null;
 const post = (reply: WorkerReply) => self.postMessage(reply);
 
@@ -42,20 +47,14 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   if (request.type === "load") {
     const began = performance.now();
     try {
-      const at = (name: string) => `${request.base}${name}`;
-      const [graph, q8, manifest, config, tokenizer] = await Promise.all([
-        fetchOk(at("graph.onnx")).then((r) => r.arrayBuffer()),
-        fetchOk(at("weights.q8")).then((r) => r.arrayBuffer()),
-        fetchOk(at("weights.json")).then((r) => r.json() as Promise<WeightsManifest>),
-        fetchOk(at("config.json")).then((r) => r.json() as Promise<ModelConfig>),
-        fetchOk(at("tokenizer.json")).then((r) => r.json()),
-      ]);
+      const { graph, weights, manifest, config, tokenizer, runtime } = request.files;
       ort.env.wasm.numThreads = 1;
+      ort.env.wasm.wasmBinary = runtime;
       const session = await ort.InferenceSession.create(new Uint8Array(graph), {
         executionProviders: ["wasm"],
-        externalData: [{ path: "weights.f32", data: expand(manifest, q8) }],
+        externalData: [{ path: "weights.f32", data: expand(manifest, weights) }],
       });
-      suggester = new Suggester(ort, session, new Tokenizer(tokenizer), config);
+      suggester = new Suggester(ort, session, new Tokenizer(tokenizer as ConstructorParameters<typeof Tokenizer>[0]), config);
       post({ type: "loaded", milliseconds: performance.now() - began });
     } catch (error) {
       post({ type: "failed", error: String(error) });
