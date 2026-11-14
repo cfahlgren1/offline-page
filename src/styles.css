@@ -23,6 +23,14 @@
   --ok: #34c759;
   --error: #d70015;
   --float: 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 12px 40px rgb(0 0 0 / 0.14);
+  --side: #f5f1e8;
+  --side-line: #e3dccd;
+  --side-ink: #2f2923;
+  --side-sub: #9a8f80;
+  --side-faint: #b3a795;
+  --leader: #d4cab9;
+  --side-shadow: 6px 0 30px -10px rgb(60 40 10 / 0.22);
+  --side-hover: rgb(60 40 10 / 0.05);
   color-scheme: light;
 }
 
@@ -44,6 +52,14 @@
     --context: #bf7bff;
     --context-line: rgb(191 123 255 / 0.6);
     --float: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 16px 50px rgb(0 0 0 / 0.6);
+    --side: #1b1916;
+    --side-line: #2c2924;
+    --side-ink: #ece6dc;
+    --side-sub: #8d8476;
+    --side-faint: #6c6458;
+    --leader: #3d3830;
+    --side-shadow: 6px 0 30px -10px rgb(0 0 0 / 0.7);
+    --side-hover: rgb(255 255 255 / 0.05);
     color-scheme: dark;
   }
 }
@@ -65,6 +81,14 @@
   --context: #bf7bff;
   --context-line: rgb(191 123 255 / 0.6);
   --float: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 16px 50px rgb(0 0 0 / 0.6);
+  --side: #1b1916;
+  --side-line: #2c2924;
+  --side-ink: #ece6dc;
+  --side-sub: #8d8476;
+  --side-faint: #6c6458;
+  --leader: #3d3830;
+  --side-shadow: 6px 0 30px -10px rgb(0 0 0 / 0.7);
+  --side-hover: rgb(255 255 255 / 0.05);
   color-scheme: dark;
 }
 
@@ -82,6 +106,10 @@
   --color-caret: var(--caret);
   --color-spelling: var(--spelling);
   --color-context: var(--context);
+  --color-side: var(--side);
+  --color-side-ink: var(--side-ink);
+  --color-side-sub: var(--side-sub);
+  --color-side-faint: var(--side-faint);
   --color-ok: var(--ok);
   --color-error: var(--error);
   --shadow-float: var(--float);
@@ -198,5 +226,248 @@
 
   .ghost-key {
     @apply ml-2 inline-flex items-center rounded-md border border-b-2 border-line px-[7px] align-[0.2em] font-sans text-[11px] leading-[1.5] font-semibold tracking-[0.02em] text-sub;
+  }
+}
+
+/*
+ * The sidebar is the notebook's table of contents: serif titles, numbered, with dotted leaders out to the time.
+ * On wide screens it sits beside the page with a curved edge, and hides down to a spine. On narrow screens it's a drawer.
+ */
+@layer components {
+  .sidebar {
+    @apply fixed inset-y-0 left-0 z-30 flex w-[272px] flex-col bg-side px-[22px] pt-[22px] pb-4 font-serif text-side-ink;
+    border-radius: 0 34px 34px 0;
+    box-shadow: var(--side-shadow);
+    transition: translate 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .side-brand {
+    @apply text-[22px] font-medium tracking-[-0.01em];
+  }
+
+  .side-brand i {
+    @apply text-side-sub;
+  }
+
+  .side-icon {
+    @apply inline-flex size-7 flex-none items-center justify-center rounded-[7px] text-side-sub hover:bg-(--side-hover) hover:text-side-ink;
+  }
+
+  .side-icon svg {
+    @apply size-4 fill-none stroke-current;
+    stroke-width: 1.5;
+  }
+
+  .side-tagline {
+    @apply mt-0.5 text-sm text-side-sub italic;
+  }
+
+  .side-caption {
+    @apply mt-7 font-sans text-[10.5px] font-semibold tracking-[0.14em] text-side-faint uppercase;
+  }
+
+  .pages {
+    @apply -mx-2 mt-2 min-h-0 overflow-y-auto overscroll-contain;
+  }
+
+  .page-row {
+    @apply relative flex w-full items-start gap-2 rounded-[10px] px-2 py-1.5 text-left hover:bg-(--side-hover);
+  }
+
+  .page-n {
+    @apply w-[18px] flex-none pt-[5px] font-sans text-[11px] font-medium text-side-faint;
+  }
+
+  .page-row[aria-current="page"] .page-n {
+    @apply text-context;
+  }
+
+  .page-row[aria-current="page"] .page-title {
+    @apply italic;
+  }
+
+  .page-line {
+    @apply flex min-w-0 items-baseline gap-2;
+  }
+
+  .page-title {
+    @apply min-w-0 truncate text-base;
+  }
+
+  .leader {
+    @apply min-w-3 flex-1 -translate-y-1 border-b-[1.5px] border-dotted;
+    border-color: var(--leader);
+  }
+
+  .page-when {
+    @apply flex-none font-sans text-[11px] font-medium text-side-faint;
+  }
+
+  .page-preview {
+    @apply mt-px block truncate text-[13px] text-side-sub italic;
+  }
+
+  .page-delete {
+    @apply absolute top-1.5 right-1.5 hidden rounded-md bg-side px-1.5 font-sans text-[11px] text-side-faint hover:text-error focus-visible:block;
+  }
+
+  li:hover > .page-delete {
+    @apply block;
+  }
+
+  li:hover .page-when {
+    @apply invisible;
+  }
+
+  .new-page {
+    @apply mt-2.5 self-start text-[15px] text-side-sub italic hover:text-side-ink;
+  }
+
+  .models {
+    @apply flex flex-col gap-1.5 border-t pt-3;
+    border-color: var(--side-line);
+  }
+
+  .model {
+    @apply flex w-full items-baseline gap-2 text-left;
+  }
+
+  .model-n {
+    @apply w-[18px] flex-none font-sans text-[11px] font-medium text-side-faint;
+  }
+
+  .model[aria-checked="true"] .model-n:first-child {
+    @apply text-context;
+  }
+
+  #toggle-tinynext[aria-checked="true"] .model-n {
+    @apply text-side-faint;
+  }
+
+  .model-name {
+    @apply flex-none font-sans text-[13px] font-[650] tracking-[-0.01em];
+  }
+
+  .model-name i {
+    @apply font-serif text-[1.1em] font-medium;
+  }
+
+  .pill {
+    @apply inline-block w-[38px] flex-none rounded-full py-0.5 text-center font-sans text-[10px] font-semibold tracking-[0.06em];
+  }
+
+  .model[aria-checked="true"] .pill {
+    @apply bg-side-ink text-side;
+  }
+
+  .model[aria-checked="true"] .pill::after {
+    content: "ON";
+  }
+
+  .model[aria-checked="false"] .pill {
+    @apply text-side-faint;
+    box-shadow: inset 0 0 0 1px var(--leader);
+  }
+
+  .model[aria-checked="false"] .pill::after {
+    content: "OFF";
+  }
+
+  .model[aria-checked="false"] .model-name {
+    @apply opacity-50;
+  }
+
+  .side-foot {
+    @apply flex items-center justify-between gap-3 pt-2.5 font-sans text-[11.5px] text-side-faint;
+  }
+
+  .spine {
+    @apply fixed inset-y-0 left-0 z-20 flex w-11 flex-col items-center gap-[18px] border-r bg-side py-[18px] text-side-ink;
+    border-color: var(--side-line);
+    transition: translate 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .spine-title {
+    @apply rotate-180 font-serif text-lg font-medium tracking-[0.02em];
+    writing-mode: vertical-rl;
+  }
+
+  .spine-title i {
+    @apply text-side-sub;
+  }
+
+  .spine-dots {
+    @apply mt-auto flex flex-col gap-1.5;
+  }
+
+  .spine-dots i {
+    @apply block size-[7px] rounded-full;
+    background: var(--leader);
+  }
+
+  .spine-dots i[data-on] {
+    @apply bg-ink;
+  }
+
+  .spine-dots i#spine-tinyfix[data-on] {
+    @apply bg-context;
+  }
+
+  .backdrop {
+    @apply pointer-events-none fixed inset-0 z-20 bg-black/20 opacity-0 transition-opacity;
+  }
+
+  .shell {
+    transition: padding-left 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* Wide screens: the sidebar sits beside the page, or hides down to the spine. */
+  @media (min-width: 900px) {
+    .drawer-only {
+      @apply hidden;
+    }
+
+    :root[data-sidebar="open"] .shell {
+      padding-left: 272px;
+    }
+
+    :root[data-sidebar="open"] .spine {
+      translate: -100% 0;
+    }
+
+    :root[data-sidebar="closed"] .shell {
+      padding-left: 44px;
+    }
+
+    :root[data-sidebar="closed"] .sidebar {
+      translate: calc(-100% - 40px) 0;
+    }
+  }
+
+  /* Narrow screens: no spine, and the sidebar is a drawer over the page. */
+  @media (max-width: 899px) {
+    .spine {
+      @apply hidden;
+    }
+
+    :root[data-sidebar="closed"] .sidebar {
+      translate: calc(-100% - 40px) 0;
+    }
+
+    :root[data-sidebar="open"] .backdrop {
+      @apply pointer-events-auto opacity-100;
+    }
+
+    .sidebar {
+      @apply w-[min(300px,86vw)] pb-[calc(16px+env(safe-area-inset-bottom))];
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sidebar,
+    .spine,
+    .shell {
+      transition: none;
+    }
   }
 }

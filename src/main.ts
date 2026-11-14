@@ -1,11 +1,13 @@
 import serifFont from "@fontsource-variable/newsreader/files/newsreader-latin-opsz-normal.woff2?url";
 import type { Editor, JSONContent } from "@tiptap/core";
-import { MODELS, hubUrl, type ModelId } from "./brand";
+import { MODELS, type ModelId } from "./brand";
 import { createEditor } from "./editor";
 import { revertFix } from "./extensions/autocorrect";
+import { suggestionsKey } from "./extensions/suggestions";
 import { FixPopover } from "./fixPopover";
 import { loadModels, type Models } from "./models";
-import { store, type DocRecord } from "./store";
+import { settings } from "./settings";
+import { store, type DocRecord, type DocSummary } from "./store";
 import { TinyNextClient } from "./tinynext/client";
 import "./styles.css";
 import { WELCOME_MARKDOWN, WELCOME_TITLE } from "./welcome";
@@ -22,9 +24,12 @@ function element<T extends HTMLElement = HTMLElement>(id: string): T {
 }
 
 const ui = {
-  title: element("doc-title"),
-  docsButton: element<HTMLButtonElement>("docs-button"),
-  docsMenu: element("docs-menu"),
+  pages: element("pages"),
+  newPage: element<HTMLButtonElement>("new-page"),
+  sidebarClose: element<HTMLButtonElement>("sidebar-close"),
+  sidebarOpen: element<HTMLButtonElement>("sidebar-open"),
+  sidebarOpenSpine: element<HTMLButtonElement>("sidebar-open-spine"),
+  backdrop: element("backdrop"),
   saveChip: element("save-chip"),
   saveStatus: element("save-status"),
   exportButton: element<HTMLButtonElement>("export"),
@@ -32,9 +37,8 @@ const ui = {
   themeButton: element<HTMLButtonElement>("theme"),
   meta: element("meta"),
   editorHost: element("editor"),
-  models: element("models"),
+  modelsStatus: element("models-status"),
   modelStatus: element("model-status"),
-  offlineStatus: element("offline-status"),
 };
 
 let models: Models | null = null;
@@ -69,7 +73,8 @@ function saveNow(): void {
   current = { ...current, title: titleOf(editor), content: editor.getJSON(), updatedAt: Date.now() };
   try {
     store.save(current);
-    setSaveStatus("Saved on this device");
+    setSaveStatus("Saved");
+    renderPages();
   } catch (error) {
     setSaveStatus("Couldn’t save in this browser", true);
     console.error("Saving failed", error);
@@ -82,7 +87,6 @@ function renderMeta(): void {
   const words = countWords(editor);
   const title = titleOf(editor);
   ui.meta.textContent = `${date} · ${words.toLocaleString()} ${words === 1 ? "word" : "words"}`;
-  ui.title.textContent = title;
   document.title = `${title} · offline.page`;
 }
 
@@ -90,7 +94,12 @@ function renderMeta(): void {
 
 type OpenContent = { type: "json"; content: JSONContent } | { type: "markdown"; content: string };
 
-function open(doc: DocRecord, source: OpenContent = { type: "json", content: doc.content }): void {
+/** Model output is only used while its switch is on. Switching tinynext off also clears the suggestion on screen. */
+const activeModels = (): Models | null => (settings.isModelOn("tinyfix") ? models : null);
+const activeTinyNext = (): TinyNextClient | null => (settings.isModelOn("tinynext") ? tinynext : null);
+
+/** New pages start with the cursor in the title; existing ones open at the top. */
+function open(doc: DocRecord, source: OpenContent = { type: "json", content: doc.content }, focus: "start" | "end" = "start"): void {
   saveNow();
   popover.hide();
   editor?.destroy();
@@ -100,8 +109,9 @@ function open(doc: DocRecord, source: OpenContent = { type: "json", content: doc
     element: ui.editorHost,
     content: source.content,
     contentType: source.type,
-    getModels: () => models,
-    getTinyNext: () => tinynext,
+    focus,
+    getModels: activeModels,
+    getTinyNext: activeTinyNext,
     onFixClick: (fix, anchor) => popover.show(fix, anchor),
     onUpdate: () => {
       renderMeta();
@@ -112,10 +122,15 @@ function open(doc: DocRecord, source: OpenContent = { type: "json", content: doc
   });
   renderMeta();
   if (source.type === "markdown") saveNow();
+  renderPages();
+  if (isDrawer()) setSidebar(false);
 }
 
 const openWelcome = () => open(store.create({ type: "doc" }, WELCOME_TITLE), { type: "markdown", content: WELCOME_MARKDOWN });
-const openNew = () => open(store.create({ type: "doc", content: [{ type: "heading", attrs: { level: 1 } }] }, "Untitled"));
+const openNew = () => {
+  const doc = store.create({ type: "doc", content: [{ type: "heading", attrs: { level: 1 } }] }, "Untitled");
+  open(doc, { type: "json", content: doc.content }, "end");
+};
 
 /** Opens the most recent page, or a fresh one when there are none left. */
 function openMostRecent(): void {
@@ -133,79 +148,91 @@ function openInitial(): void {
   else openWelcome();
 }
 
-function button(className: string, text: string, onClick: () => void): HTMLButtonElement {
-  const created = document.createElement("button");
-  created.type = "button";
+// ---- Sidebar -----------------------------------------------------------------
+
+const DRAWER_QUERY = matchMedia("(max-width: 899px)");
+const isDrawer = (): boolean => DRAWER_QUERY.matches;
+
+/** Today's pages show the time; older ones the date. */
+function when(timestamp: number): string {
+  const date = new Date(timestamp);
+  if (date.toDateString() === new Date().toDateString()) {
+    // The time without AM/PM, which the sidebar has no room for: "9:41".
+    const parts = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).formatToParts(date);
+    return parts.filter((part) => part.type === "hour" || part.type === "minute" || (part.type === "literal" && part.value.trim())).map((part) => part.value).join("");
+  }
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function span(className: string, text = ""): HTMLSpanElement {
+  const created = document.createElement("span");
   created.className = className;
   created.textContent = text;
-  created.addEventListener("click", onClick);
   return created;
 }
 
-function renderDocsMenu(): void {
-  const newPage = button("w-full rounded-[9px] px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-hover", "New page", () => {
-    closeDocsMenu();
-    openNew();
-  });
-
-  const rows = store.list().map((summary) => {
-    const row = document.createElement("div");
-    row.className = "group/row flex items-center rounded-[9px] hover:bg-hover data-[current]:bg-hover";
-    row.toggleAttribute("data-current", summary.id === current?.id);
-
-    const openPage = button("flex min-w-0 flex-1 justify-between gap-3 px-3 py-[9px] text-left text-sm text-ink", "", () => {
-      closeDocsMenu();
-      const doc = store.load(summary.id);
-      if (doc) open(doc);
-    });
-    const title = document.createElement("span");
-    title.className = "truncate";
-    title.textContent = summary.title;
-    const date = document.createElement("small");
-    date.className = "flex-none text-xs text-faint";
-    date.textContent = new Date(summary.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    openPage.append(title, date);
-
-    const remove = button(
-      "px-3 py-[9px] text-xs text-faint opacity-0 group-hover/row:opacity-100 hover:text-error focus-visible:opacity-100 pointer-coarse:opacity-100",
-      "Delete",
-      () => {
-        if (!confirm(`Delete “${summary.title}”? This can’t be undone.`)) return;
-        const wasCurrent = summary.id === current?.id;
-        store.remove(summary.id);
-        if (wasCurrent) {
-          current = null;
-          openMostRecent();
-        }
-        renderDocsMenu();
-      },
-    );
-    remove.setAttribute("aria-label", `Delete ${summary.title}`);
-    row.append(openPage, remove);
-    return row;
-  });
-
-  ui.docsMenu.replaceChildren(newPage, ...rows);
+function deletePage(summary: DocSummary): void {
+  if (!confirm(`Delete “${summary.title}”? This can’t be undone.`)) return;
+  const wasCurrent = summary.id === current?.id;
+  store.remove(summary.id);
+  if (!wasCurrent) return renderPages();
+  current = null;
+  openMostRecent();
 }
 
-const closeOnOutsideClick = (event: MouseEvent): void => {
-  const target = event.target as Node;
-  if (!ui.docsMenu.contains(target) && !ui.docsButton.contains(target)) closeDocsMenu();
-};
+function pageItem(summary: DocSummary, index: number): HTMLLIElement {
+  const item = document.createElement("li");
+  item.className = "relative";
+  const row = document.createElement("button");
+  row.type = "button";
+  row.className = "page-row";
+  if (summary.id === current?.id) row.setAttribute("aria-current", "page");
+  const body = span("min-w-0 flex-1");
+  const line = span("page-line");
+  line.append(span("page-title", summary.title), span("leader"), span("page-when", when(summary.updatedAt)));
+  body.append(line);
+  if (summary.preview) body.append(span("page-preview", summary.preview));
+  row.append(span("page-n", String(index + 1).padStart(2, "0")), body);
+  row.addEventListener("click", () => {
+    if (summary.id === current?.id) return isDrawer() ? setSidebar(false) : undefined;
+    const doc = store.load(summary.id);
+    if (doc) open(doc);
+  });
 
-function closeDocsMenu(): void {
-  ui.docsMenu.hidden = true;
-  ui.docsButton.setAttribute("aria-expanded", "false");
-  document.removeEventListener("mousedown", closeOnOutsideClick);
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "page-delete";
+  remove.textContent = "Delete";
+  remove.setAttribute("aria-label", `Delete ${summary.title}`);
+  remove.addEventListener("click", () => deletePage(summary));
+  item.append(row, remove);
+  return item;
 }
 
-ui.docsButton.addEventListener("click", () => {
-  if (!ui.docsMenu.hidden) return closeDocsMenu();
-  saveNow();
-  renderDocsMenu();
-  ui.docsMenu.hidden = false;
-  ui.docsButton.setAttribute("aria-expanded", "true");
-  document.addEventListener("mousedown", closeOnOutsideClick);
+function renderPages(): void {
+  ui.pages.replaceChildren(...store.list().map(pageItem));
+}
+
+function setSidebar(open: boolean, remember = false): void {
+  document.documentElement.dataset.sidebar = open ? "open" : "closed";
+  if (remember && !isDrawer()) settings.setSidebarOpen(open);
+}
+
+const toggleSidebar = () => setSidebar(document.documentElement.dataset.sidebar !== "open", true);
+
+ui.newPage.addEventListener("click", openNew);
+ui.sidebarClose.addEventListener("click", () => setSidebar(false, true));
+ui.sidebarOpen.addEventListener("click", () => setSidebar(true, true));
+ui.sidebarOpenSpine.addEventListener("click", () => setSidebar(true, true));
+ui.backdrop.addEventListener("click", () => setSidebar(false));
+DRAWER_QUERY.addEventListener("change", () => setSidebar(!isDrawer() && settings.isSidebarOpen()));
+document.addEventListener("keydown", (event) => {
+  if (event.key === "\\" && (event.metaKey || event.ctrlKey)) {
+    event.preventDefault();
+    toggleSidebar();
+  } else if (event.key === "Escape" && isDrawer() && document.documentElement.dataset.sidebar === "open") {
+    setSidebar(false);
+  }
 });
 
 // ---- Export ------------------------------------------------------------------
@@ -265,13 +292,40 @@ ui.themeButton.addEventListener("click", () => {
 
 // ---- Models and offline -------------------------------------------------------
 
-function renderModelLinks(): void {
-  for (const id of Object.keys(MODELS) as ModelId[]) {
-    const link = element<HTMLAnchorElement>(`${id}-link`);
-    link.href = hubUrl(id);
-    link.title = `${MODELS[id].role}. ${MODELS[id].caveat}`;
-    element(`${id}-size`).textContent = MODELS[id].size;
+const MODEL_IDS = Object.keys(MODELS) as ModelId[];
+type ModelState = "loading" | "ready" | "error";
+let modelState: ModelState = "loading";
+let loadMilliseconds = 0;
+let worksOffline = false;
+
+function renderStatus(): void {
+  const text = {
+    loading: "Loading models…",
+    ready: worksOffline ? "Works offline" : `Models ready in ${loadMilliseconds} ms`,
+    error: "Models couldn’t load",
+  }[modelState];
+  ui.modelStatus.textContent = text;
+  ui.modelsStatus.title = modelState === "error" ? "Writing and saving still work." : "";
+  ui.modelsStatus.toggleAttribute("data-ready", modelState === "ready");
+  ui.modelsStatus.toggleAttribute("data-error", modelState === "error");
+}
+
+function renderModelToggles(): void {
+  for (const id of MODEL_IDS) {
+    const on = settings.isModelOn(id);
+    const toggle = element<HTMLButtonElement>(`toggle-${id}`);
+    toggle.setAttribute("aria-checked", String(on));
+    toggle.title = `${MODELS[id].role}, ${MODELS[id].size}. ${MODELS[id].caveat} Click to turn it ${on ? "off" : "on"}.`;
+    element(`spine-${id}`).toggleAttribute("data-on", on);
   }
+}
+
+for (const id of MODEL_IDS) {
+  element<HTMLButtonElement>(`toggle-${id}`).addEventListener("click", () => {
+    settings.setModelOn(id, !settings.isModelOn(id));
+    renderModelToggles();
+    if (id === "tinynext" && editor && !settings.isModelOn(id)) editor.view.dispatch(editor.state.tr.setMeta(suggestionsKey, { type: "clear" }));
+  });
 }
 
 /** Exposed for latency checks: milliseconds per tinynext suggestion, measured in its worker. */
@@ -302,12 +356,13 @@ async function startModels(offlineCache: Promise<void>): Promise<void> {
     models = loaded;
     tinynext = client;
     window.offlinePageDebug = { suggestionTimings: client.timings };
-    ui.modelStatus.textContent = `models ready in ${Math.round(performance.now() - began)} ms`;
+    loadMilliseconds = Math.round(performance.now() - began);
+    modelState = "ready";
   } catch (error) {
-    ui.modelStatus.textContent = "couldn’t load. Writing and saving still work.";
-    ui.models.toggleAttribute("data-error", true);
+    modelState = "error";
     console.error("Loading models failed", error);
   }
+  renderStatus();
 }
 
 /** Resolves when a service worker stops installing: it's active, or it failed and was dropped. */
@@ -328,7 +383,7 @@ function settled(worker: ServiceWorker): Promise<void> {
 async function startOfflineCache(): Promise<void> {
   if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
   if (navigator.serviceWorker.controller) {
-    ui.offlineStatus.hidden = false;
+    worksOffline = true;
     navigator.serviceWorker.register("./sw.js").catch((error: unknown) => console.error("Offline cache update failed", error));
     return;
   }
@@ -336,7 +391,7 @@ async function startOfflineCache(): Promise<void> {
     const registration = await navigator.serviceWorker.register("./sw.js");
     const installing = registration.installing ?? registration.waiting;
     if (installing) await settled(installing);
-    ui.offlineStatus.hidden = !registration.active;
+    worksOffline = !!registration.active;
   } catch (error) {
     console.error("Offline cache failed to start", error);
   }
@@ -345,7 +400,9 @@ async function startOfflineCache(): Promise<void> {
 // The serif for systems without Iowan Old Style or Charter. It's bundled, so it works offline too.
 document.fonts.add(new FontFace("Newsreader", `url(${serifFont}) format("woff2")`, { weight: "200 800" }));
 applyTheme(readTheme());
-renderModelLinks();
+setSidebar(!isDrawer() && settings.isSidebarOpen());
+renderModelToggles();
+renderStatus();
 openInitial();
 window.addEventListener("pagehide", saveNow);
 void startModels(startOfflineCache());
