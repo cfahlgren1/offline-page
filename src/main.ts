@@ -31,7 +31,6 @@ const ui = {
   sidebarOpenSpine: element<HTMLButtonElement>("sidebar-open-spine"),
   backdrop: element("backdrop"),
   saveChip: element("save-chip"),
-  moreButton: element<HTMLButtonElement>("more"),
   moreMenu: element("more-menu"),
   saveStatus: element("save-status"),
   exportButton: element<HTMLButtonElement>("export"),
@@ -219,6 +218,7 @@ function renderPages(): void {
 }
 
 function setSidebar(open: boolean, remember = false): void {
+  closeMenu();
   document.documentElement.dataset.sidebar = open ? "open" : "closed";
   if (remember && !isDrawer()) settings.setSidebarOpen(open);
 }
@@ -303,23 +303,31 @@ ui.themeButton.addEventListener("click", () => {
 
 // ---- The ⋯ menu ------------------------------------------------------------------
 
+const moreButtons = [...document.querySelectorAll<HTMLButtonElement>(".more-button")];
+
 const closeOnOutsideClick = (event: MouseEvent): void => {
   const target = event.target as Node;
-  if (!ui.moreMenu.contains(target) && !ui.moreButton.contains(target)) closeMenu();
+  if (!ui.moreMenu.contains(target) && !moreButtons.some((button) => button.contains(target))) closeMenu();
 };
 
 function closeMenu(): void {
   ui.moreMenu.hidden = true;
-  ui.moreButton.setAttribute("aria-expanded", "false");
+  for (const button of moreButtons) button.setAttribute("aria-expanded", "false");
   document.removeEventListener("mousedown", closeOnOutsideClick);
 }
 
-ui.moreButton.addEventListener("click", () => {
-  if (!ui.moreMenu.hidden) return closeMenu();
+function openMenu(from: HTMLButtonElement): void {
+  const box = from.getBoundingClientRect();
+  ui.moreMenu.style.top = `${box.bottom + 6}px`;
+  ui.moreMenu.style.left = `${Math.max(8, box.left - 4)}px`;
   ui.moreMenu.hidden = false;
-  ui.moreButton.setAttribute("aria-expanded", "true");
+  from.setAttribute("aria-expanded", "true");
   document.addEventListener("mousedown", closeOnOutsideClick);
-});
+}
+
+for (const button of moreButtons) {
+  button.addEventListener("click", () => (ui.moreMenu.hidden ? openMenu(button) : closeMenu()));
+}
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !ui.moreMenu.hidden) closeMenu();

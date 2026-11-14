@@ -423,10 +423,6 @@
 
   /* Wide screens: the sidebar sits beside the page, or hides down to the spine. */
   @media (min-width: 900px) {
-    .drawer-only {
-      @apply hidden;
-    }
-
     :root[data-sidebar="open"] .shell {
       padding-left: 272px;
     }
@@ -473,8 +469,9 @@
 }
 
 @layer components {
+  /* Placed next to whichever ⋯ button opened it (sidebar or spine). */
   .menu {
-    @apply absolute top-[calc(100%+6px)] right-0 z-40 w-48 rounded-xl bg-surface p-1 shadow-float;
+    @apply fixed z-40 w-48 rounded-xl bg-surface p-1 font-sans shadow-float;
   }
 
   .menu-item {
