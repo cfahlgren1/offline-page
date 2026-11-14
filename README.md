@@ -5,6 +5,7 @@ colorFrom: purple
 colorTo: gray
 sdk: static
 app_file: index.html
+header: mini
 pinned: false
 short_description: A writing app with autocorrect that works in airplane mode
 models:

@@ -332,6 +332,7 @@ type ModelState = "loading" | "ready" | "error";
 let modelState: ModelState = "loading";
 let loadMilliseconds = 0;
 let worksOffline = false;
+let loadError = "";
 
 function renderStatus(): void {
   const text = {
@@ -340,7 +341,7 @@ function renderStatus(): void {
     error: "Models couldn’t load",
   }[modelState];
   ui.modelStatus.textContent = text;
-  ui.modelsStatus.title = modelState === "error" ? "Writing and saving still work." : "";
+  ui.modelsStatus.title = modelState === "error" ? `Writing and saving still work. ${loadError}` : "";
   ui.modelsStatus.toggleAttribute("data-ready", modelState === "ready");
   ui.modelsStatus.toggleAttribute("data-error", modelState === "error");
 }
@@ -395,6 +396,7 @@ async function startModels(offlineCache: Promise<void>): Promise<void> {
     modelState = "ready";
   } catch (error) {
     modelState = "error";
+    loadError = error instanceof Error ? error.message : String(error);
     console.error("Loading models failed", error);
   }
   renderStatus();
