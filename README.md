@@ -9,16 +9,16 @@ app_file: dist/index.html
 pinned: false
 short_description: A writing app with autocorrect that works in airplane mode
 models:
-  - cfahlgren1/tinyfix
-  - cfahlgren1/tinynext
+  - paperweight/tinyfix
+  - paperweight/tinynext
 ---
 
 # offline.page
 
 A Markdown writing app with autocorrect and autocomplete that run entirely in your browser. About 15 MB of models, no server, and once the page has loaded it keeps working with Wi‑Fi off.
 
-- **tinyfix** ([cfahlgren1/tinyfix](https://huggingface.co/cfahlgren1/tinyfix)) fixes misspellings as you finish a word, and real words in the wrong place ("form → from") about two words later. About 3 ms per check.
-- **tinynext** ([cfahlgren1/tinynext](https://huggingface.co/cfahlgren1/tinynext)) suggests the next few words in gray; press Tab to take them. It's a 12.5M-parameter transformer that reads the text around the cursor, trained on articles, chat and office email.
+- **tinyfix** ([paperweight/tinyfix](https://huggingface.co/paperweight/tinyfix)) fixes misspellings as you finish a word, and real words in the wrong place ("form → from") about two words later. About 3 ms per check.
+- **tinynext** ([paperweight/tinynext](https://huggingface.co/paperweight/tinynext)) suggests the next few words in gray; press Tab to take them. It's a 12.5M-parameter transformer that reads the text around the cursor, trained on articles, chat and office email.
 
 Pages are saved in your browser's local storage, and export as Markdown.
 

@@ -3,9 +3,9 @@
 </p>
 
 <p align="center">
-  <a href="https://huggingface.co/spaces/cfahlgren1/offline-page"><b>Open the app</b></a> ·
-  <a href="https://huggingface.co/cfahlgren1/tinyfix">tinyfix</a> ·
-  <a href="https://huggingface.co/cfahlgren1/tinynext">tinynext</a>
+  <a href="https://huggingface.co/spaces/paperweight/offline-page"><b>Open the app</b></a> ·
+  <a href="https://huggingface.co/paperweight/tinyfix">tinyfix</a> ·
+  <a href="https://huggingface.co/paperweight/tinynext">tinynext</a>
 </p>
 
 **offline.page** is a Markdown writing app with autocorrect and autocomplete that run entirely in your browser tab. Two tiny models, about 15 MB together, no server, and once the page has loaded it keeps working with Wi‑Fi off.
@@ -14,11 +14,11 @@
 
 <img alt="tinyfix: autocorrect that reads the words on both sides of a typo" src="../brand/tinyfix.png" width="880">
 
-**[tinyfix](https://huggingface.co/cfahlgren1/tinyfix)** fixes misspellings like “recieve” as you finish the word. It also catches real words in the wrong place, like “form” for “from”, by reading the words on both sides, so those fixes land about two words later.
+**[tinyfix](https://huggingface.co/paperweight/tinyfix)** fixes misspellings like “recieve” as you finish the word. It also catches real words in the wrong place, like “form” for “from”, by reading the words on both sides, so those fixes land about two words later.
 
 <img alt="tinynext: suggests the next few words in gray" src="../brand/tinynext.png" width="880">
 
-**[tinynext](https://huggingface.co/cfahlgren1/tinynext)** suggests the next few words in gray. Press Tab to take them. It’s a 12.5M-parameter transformer that reads up to about 1,500 characters before the cursor and the text after it, and only shows a suggestion when it’s at least 50% sure. About three in four suggestions are right.
+**[tinynext](https://huggingface.co/paperweight/tinynext)** suggests the next few words in gray. Press Tab to take them. It’s a 12.5M-parameter transformer that reads up to about 1,500 characters before the cursor and the text after it, and only shows a suggestion when it’s at least 50% sure. About three in four suggestions are right.
 
 ### What to expect
 
