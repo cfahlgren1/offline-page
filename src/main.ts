@@ -449,5 +449,7 @@ setSidebar(!isDrawer() && settings.isSidebarOpen());
 renderModelToggles();
 renderStatus();
 openInitial();
+// Animations start once the first frame is drawn, so the sidebar doesn't slide in on load.
+requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove("preload")));
 window.addEventListener("pagehide", saveNow);
 void startModels(startOfflineCache());

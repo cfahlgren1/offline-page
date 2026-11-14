@@ -8,6 +8,20 @@
     <meta name="theme-color" content="#111112" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <title>offline.page</title>
+    <!-- Sets the sidebar and theme before the first paint, so the page doesn't shift or flash while the app loads. -->
+    <script>
+      (function () {
+        var root = document.documentElement;
+        root.classList.add("preload");
+        var open = !matchMedia("(max-width: 899px)").matches;
+        try {
+          if (localStorage.getItem("offline.page/sidebar") === "closed") open = false;
+          var theme = localStorage.getItem("offline.page/theme");
+          if (theme === "light" || theme === "dark") root.dataset.theme = theme;
+        } catch (error) {}
+        root.dataset.sidebar = open ? "open" : "closed";
+      })();
+    </script>
   </head>
   <body>
     <aside id="sidebar" class="sidebar" aria-label="Pages and models">

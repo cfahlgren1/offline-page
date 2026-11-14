@@ -459,6 +459,13 @@
     }
   }
 
+  /* No sliding on load: index.html adds .preload until the first frame is drawn. */
+  .preload .sidebar,
+  .preload .spine,
+  .preload .shell {
+    transition: none;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .sidebar,
     .spine,
