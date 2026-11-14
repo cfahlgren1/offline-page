@@ -26,7 +26,7 @@ export const MODELS = {
     role: "Suggestions",
     size: "13 MB",
     repo: "paperweight/tinynext",
-    caveat: "Suggests a few words when it’s at least 50% sure, and is right about three times out of four.",
+    caveat: "Suggests a few words when it’s at least 40% sure, and is right about two times in three.",
   },
 } as const satisfies Record<ModelId, ModelBrand>;
 

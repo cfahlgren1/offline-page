@@ -2,7 +2,11 @@ import type * as Ort from "onnxruntime-web";
 import type { Tokenizer } from "./tokenizer";
 
 /** Settings shared with v2/eval.py in the tinynext model repo, so the app decodes exactly the way the model was measured. */
-export const CUTOFF = 0.5;
+/**
+ * 40% sure. On the eval it suggests at 16-25% of pauses and is right about two times in three, versus 11-19% and three
+ * in four at 50%, which felt too quiet in use. See v2/metrics in the tinynext model repo.
+ */
+export const CUTOFF = 0.4;
 const MAX_WORDS = 6;
 const MAX_CHARS = 48;
 const MAX_STEPS = 16;

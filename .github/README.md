@@ -18,7 +18,7 @@
 
 <img alt="tinynext: suggests the next few words in gray" src="../brand/tinynext.png" width="880">
 
-**[tinynext](https://huggingface.co/paperweight/tinynext)** suggests the next few words in gray. Press Tab to take them. It’s a 12.5M-parameter transformer that reads up to about 1,500 characters before the cursor and the text after it, and only shows a suggestion when it’s at least 50% sure. About three in four suggestions are right.
+**[tinynext](https://huggingface.co/paperweight/tinynext)** suggests the next few words in gray. Press Tab to take them. It’s a 12.5M-parameter transformer that reads up to about 1,500 characters before the cursor and the text after it, and only shows a suggestion when it’s at least 40% sure. About two in three suggestions are right.
 
 ### What to expect
 
