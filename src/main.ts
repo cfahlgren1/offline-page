@@ -31,6 +31,8 @@ const ui = {
   sidebarOpenSpine: element<HTMLButtonElement>("sidebar-open-spine"),
   backdrop: element("backdrop"),
   saveChip: element("save-chip"),
+  moreButton: element<HTMLButtonElement>("more"),
+  moreMenu: element("more-menu"),
   saveStatus: element("save-status"),
   exportButton: element<HTMLButtonElement>("export"),
   copyButton: element<HTMLButtonElement>("copy"),
@@ -62,9 +64,12 @@ function countWords(target: Editor): number {
   return doc.textBetween(0, doc.content.size, " ", " ").match(/\S+/g)?.length ?? 0;
 }
 
-function setSaveStatus(text: string, isError = false): void {
+/** The bar shows only a dot once a page is saved; words appear while saving and when saving fails. */
+function setSaveStatus(text: string, state: "saved" | "busy" | "error"): void {
   ui.saveStatus.textContent = text;
-  ui.saveChip.toggleAttribute("data-error", isError);
+  ui.saveChip.title = state === "saved" ? "Saved on this device" : text;
+  ui.saveChip.toggleAttribute("data-busy", state === "busy");
+  ui.saveChip.toggleAttribute("data-error", state === "error");
 }
 
 function saveNow(): void {
@@ -73,10 +78,10 @@ function saveNow(): void {
   current = { ...current, title: titleOf(editor), content: editor.getJSON(), updatedAt: Date.now() };
   try {
     store.save(current);
-    setSaveStatus("Saved");
+    setSaveStatus("Saved", "saved");
     renderPages();
   } catch (error) {
-    setSaveStatus("Couldn’t save in this browser", true);
+    setSaveStatus("Couldn’t save in this browser", "error");
     console.error("Saving failed", error);
   }
 }
@@ -115,7 +120,7 @@ function open(doc: DocRecord, source: OpenContent = { type: "json", content: doc
     onFixClick: (fix, anchor) => popover.show(fix, anchor),
     onUpdate: () => {
       renderMeta();
-      setSaveStatus("Saving…");
+      setSaveStatus("Saving…", "busy");
       window.clearTimeout(saveTimer);
       saveTimer = window.setTimeout(saveNow, SAVE_DELAY_MS);
     },
@@ -253,6 +258,7 @@ ui.exportButton.addEventListener("click", () => {
   link.download = `${slug(titleOf(editor))}.md`;
   link.click();
   URL.revokeObjectURL(link.href);
+  closeMenu();
 });
 
 ui.copyButton.addEventListener("click", async () => {
@@ -277,17 +283,46 @@ function readTheme(): Theme | null {
   }
 }
 
+function isDark(): boolean {
+  const chosen = document.documentElement.dataset.theme;
+  return chosen ? chosen === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
 function applyTheme(theme: Theme | null): void {
   if (theme) document.documentElement.dataset.theme = theme;
   else delete document.documentElement.dataset.theme;
+  ui.themeButton.textContent = isDark() ? "Light mode" : "Dark mode";
 }
 
 ui.themeButton.addEventListener("click", () => {
-  const chosen = document.documentElement.dataset.theme;
-  const isDark = chosen ? chosen === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  const next: Theme = isDark ? "light" : "dark";
+  const next: Theme = isDark() ? "light" : "dark";
   applyTheme(next);
   localStorage.setItem(THEME_KEY, next);
+  closeMenu();
+});
+
+// ---- The ⋯ menu ------------------------------------------------------------------
+
+const closeOnOutsideClick = (event: MouseEvent): void => {
+  const target = event.target as Node;
+  if (!ui.moreMenu.contains(target) && !ui.moreButton.contains(target)) closeMenu();
+};
+
+function closeMenu(): void {
+  ui.moreMenu.hidden = true;
+  ui.moreButton.setAttribute("aria-expanded", "false");
+  document.removeEventListener("mousedown", closeOnOutsideClick);
+}
+
+ui.moreButton.addEventListener("click", () => {
+  if (!ui.moreMenu.hidden) return closeMenu();
+  ui.moreMenu.hidden = false;
+  ui.moreButton.setAttribute("aria-expanded", "true");
+  document.addEventListener("mousedown", closeOnOutsideClick);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !ui.moreMenu.hidden) closeMenu();
 });
 
 // ---- Models and offline -------------------------------------------------------

@@ -56,15 +56,18 @@
         <button id="sidebar-open" class="side-icon drawer-only" type="button" aria-label="Show pages">
           <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2.5" width="12" height="11" rx="2.5" /><path d="M6.5 2.5v11" /></svg>
         </button>
-        <div class="ml-auto flex flex-wrap items-center gap-x-[18px] gap-y-2">
-          <span id="save-chip" class="group inline-flex items-center gap-1.5 text-xs text-faint data-[error]:text-error">
-            <i class="size-1.5 flex-none rounded-full bg-ok group-data-[error]:bg-error"></i><span id="save-status">Saved</span>
+        <div class="relative ml-auto flex items-center gap-1">
+          <span id="save-chip" class="group inline-flex items-center gap-1.5 px-2 text-xs text-faint data-[error]:text-error" title="Saved on this device">
+            <i class="size-1.5 flex-none rounded-full bg-ok group-data-[busy]:bg-faint group-data-[error]:bg-error"></i><span id="save-status" class="hidden group-data-[busy]:inline group-data-[error]:inline">Saved</span>
           </span>
-          <button id="export" class="min-h-7 hover:text-ink" type="button">Export</button>
-          <button id="copy" class="min-h-7 hover:text-ink" type="button">Copy</button>
-          <button id="theme" class="inline-flex min-h-7 min-w-7 items-center justify-center hover:text-ink" type="button" aria-label="Switch light or dark">
-            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.6A5.6 5.6 0 0 1 6.4 2.5a5.6 5.6 0 1 0 7.1 7.1Z" fill="currentColor" /></svg>
+          <button id="more" class="inline-flex size-8 items-center justify-center rounded-lg text-faint hover:bg-hover hover:text-ink" type="button" aria-label="More" aria-haspopup="menu" aria-expanded="false">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.5" cy="8" r="1.3" fill="currentColor" /><circle cx="8" cy="8" r="1.3" fill="currentColor" /><circle cx="12.5" cy="8" r="1.3" fill="currentColor" /></svg>
           </button>
+          <div id="more-menu" class="menu" role="menu" hidden>
+            <button id="export" class="menu-item" type="button" role="menuitem">Export as Markdown</button>
+            <button id="copy" class="menu-item" type="button" role="menuitem">Copy Markdown</button>
+            <button id="theme" class="menu-item" type="button" role="menuitem">Dark mode</button>
+          </div>
         </div>
       </header>
 

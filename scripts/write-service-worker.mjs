@@ -39,16 +39,26 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Cache first: every file is versioned by the cache name, so the cached copy is always the right one.
 // ignoreVary, because module scripts are requested with an Origin header that the cached copies weren't.
-// Page loads get index.html: hosts like HF Spaces answer "/" with a redirect, and a redirected response can't be served for a navigation.
 const MATCH = { ignoreSearch: true, ignoreVary: true };
 
+/**
+ * Page loads go to the network first, so a new deploy shows up on the next visit even when this worker can't update
+ * itself (a private Space in an iframe can't fetch sw.js). Offline, or if the network fails, the cached index.html is
+ * served: hosts like HF Spaces answer "/" with a redirect, and a redirected response can't be served for a navigation.
+ */
+function navigate(request) {
+  return fetch(request)
+    .then((response) => (response.ok && !response.redirected ? response : caches.match("./index.html", MATCH).then((cached) => cached ?? response)))
+    .catch(() => caches.match("./index.html", MATCH));
+}
+
+// Everything else is cache first: the built files have content hashes and the models are versioned by the cache name.
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
-  const lookup = caches.match(request.mode === "navigate" ? "./index.html" : request, MATCH);
-  event.respondWith(lookup.then((cached) => cached ?? fetch(request)));
+  if (request.mode === "navigate") return event.respondWith(navigate(request));
+  event.respondWith(caches.match(request, MATCH).then((cached) => cached ?? fetch(request)));
 });
 `;
 
