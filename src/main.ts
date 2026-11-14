@@ -284,14 +284,25 @@ declare global {
 // Absolute, because the worker resolves relative URLs against its own script in assets/, not the page.
 const TINYNEXT_URL = new URL(`${import.meta.env.BASE_URL}models/tinynext/`, location.href).href;
 
-async function startModels(): Promise<void> {
+async function loadTinyNext(): Promise<TinyNextClient> {
+  const client = new TinyNextClient();
+  await client.load(TINYNEXT_URL);
+  return client;
+}
+
+/**
+ * The models load once the offline cache is filled, so they're read from that cache instead of being downloaded a
+ * second time alongside the service worker.
+ */
+async function startModels(offlineCache: Promise<void>): Promise<void> {
+  await offlineCache;
   const began = performance.now();
   try {
-    const client = new TinyNextClient();
-    [models] = await Promise.all([loadModels(), client.load(TINYNEXT_URL)]);
+    const [loaded, client] = await Promise.all([loadModels(), loadTinyNext()]);
+    models = loaded;
     tinynext = client;
     window.offlinePageDebug = { suggestionTimings: client.timings };
-    ui.modelStatus.textContent = `ready in ${Math.round(performance.now() - began)} ms`;
+    ui.modelStatus.textContent = `models ready in ${Math.round(performance.now() - began)} ms`;
   } catch (error) {
     ui.modelStatus.textContent = "couldn’t load. Writing and saving still work.";
     ui.models.toggleAttribute("data-error", true);
@@ -299,12 +310,33 @@ async function startModels(): Promise<void> {
   }
 }
 
+/** Resolves when a service worker stops installing: it's active, or it failed and was dropped. */
+function settled(worker: ServiceWorker): Promise<void> {
+  return new Promise((resolve) => {
+    const check = () => {
+      if (worker.state === "activated" || worker.state === "redundant") resolve();
+    };
+    worker.addEventListener("statechange", check);
+    check();
+  });
+}
+
+/**
+ * Resolves once the offline cache is filled, or couldn't be. Never rejects, so the models load either way. A page the
+ * service worker already serves doesn't wait: its cache is filled, and offline the update check would only stall.
+ */
 async function startOfflineCache(): Promise<void> {
   if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
-  try {
-    await navigator.serviceWorker.register("./sw.js");
-    await navigator.serviceWorker.ready;
+  if (navigator.serviceWorker.controller) {
     ui.offlineStatus.hidden = false;
+    navigator.serviceWorker.register("./sw.js").catch((error: unknown) => console.error("Offline cache update failed", error));
+    return;
+  }
+  try {
+    const registration = await navigator.serviceWorker.register("./sw.js");
+    const installing = registration.installing ?? registration.waiting;
+    if (installing) await settled(installing);
+    ui.offlineStatus.hidden = !registration.active;
   } catch (error) {
     console.error("Offline cache failed to start", error);
   }
@@ -316,5 +348,4 @@ applyTheme(readTheme());
 renderModelLinks();
 openInitial();
 window.addEventListener("pagehide", saveNow);
-void startModels();
-void startOfflineCache();
+void startModels(startOfflineCache());

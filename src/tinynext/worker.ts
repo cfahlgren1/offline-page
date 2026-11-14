@@ -28,13 +28,8 @@ function expand(manifest: WeightsManifest, q8: ArrayBuffer): Uint8Array {
   return new Uint8Array(out.buffer);
 }
 
-/**
- * Skips the HTTP cache. On a first visit the service worker is fetching the same 13 MB file into its own cache, and
- * Chromium fails one of two overlapping HTTP cache writes (ERR_CACHE_WRITE_FAILURE). Later visits are served by the
- * service worker, which this doesn't bypass.
- */
 async function fetchOk(url: string): Promise<Response> {
-  const response = await fetch(url, { cache: "no-store" });
+  const response = await fetch(url);
   if (!response.ok) throw new Error(`Couldn't load ${url} (${response.status}).`);
   return response;
 }
