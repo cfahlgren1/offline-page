@@ -1,8 +1,8 @@
 // Pierre's highlighter: a WebAssembly lexer for 152 languages that colors thousands of lines in a few milliseconds.
 // This file is loaded on demand, the first time a page has a code block.
 import { codeToTokens, isSupportedLanguage } from "@pierre/highlights";
-import dark from "@pierre/highlights/themes/pierre-dark";
-import light from "@pierre/highlights/themes/pierre-light";
+import dark from "@pierre/highlights/themes/pierre-dark-soft";
+import light from "@pierre/highlights/themes/pierre-light-soft";
 
 /** A run of code and the colors it takes in each theme, as CSS custom properties. */
 export interface ColoredRange {
