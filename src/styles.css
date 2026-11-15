@@ -225,8 +225,46 @@
     @apply mb-[26px] overflow-x-auto rounded-xl bg-chip px-5 py-[18px] text-[15px] leading-[1.6];
   }
 
+  /* Room at the top for the language menu, so it never sits over the first line of code. */
+  .prose pre {
+    @apply relative pt-9;
+  }
+
   .prose pre code {
     @apply bg-transparent p-0 text-[length:inherit];
+  }
+
+  /* Highlighted code: each run carries its color for both themes, and the page's theme picks one. */
+  .prose pre .tok {
+    color: var(--hls-light);
+    font-style: var(--hls-light-font-style, normal);
+    font-weight: var(--hls-light-font-weight, inherit);
+  }
+
+  :root[data-theme="dark"] .prose pre .tok {
+    color: var(--hls-dark);
+    font-style: var(--hls-dark-font-style, normal);
+    font-weight: var(--hls-dark-font-weight, inherit);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .prose pre .tok {
+      color: var(--hls-dark);
+      font-style: var(--hls-dark-font-style, normal);
+      font-weight: var(--hls-dark-font-weight, inherit);
+    }
+  }
+
+  /* The language menu in a code block's corner. Quiet until the block is hovered or it's in use. */
+  .code-language {
+    @apply absolute top-2 right-2 max-w-[45%] cursor-pointer appearance-none rounded-md bg-transparent px-2 py-1 font-sans text-[11.5px] text-faint hover:bg-hover hover:text-sub focus-visible:text-sub;
+  }
+
+  @media (pointer: coarse) {
+    /* 16px keeps iOS from zooming the page when the menu opens. */
+    .code-language {
+      @apply min-h-9 text-base;
+    }
   }
 
   .prose hr {

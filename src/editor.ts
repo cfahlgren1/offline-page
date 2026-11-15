@@ -4,6 +4,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "@tiptap/markdown";
 import StarterKit from "@tiptap/starter-kit";
 import { Autocorrect, type AppliedFix } from "./extensions/autocorrect";
+import { CodeHighlight } from "./extensions/codeHighlight";
 import { SlashMenu } from "./extensions/slashMenu";
 import { Suggestions } from "./extensions/suggestions";
 import type { Models } from "./models";
@@ -65,6 +66,7 @@ export function createEditor(setup: EditorSetup): Editor {
       Autocorrect.configure({ getModels: setup.getModels, onFixClick: setup.onFixClick }),
       Suggestions.configure({ getTinyNext: setup.getTinyNext }),
       SlashMenu,
+      CodeHighlight,
     ],
     onUpdate: ({ editor: updated }) => setup.onUpdate(updated),
   });
