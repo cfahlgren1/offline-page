@@ -1,0 +1,7 @@
+{
+  // Serves the built site (dist/) from Cloudflare at offlinepage.app. There is no server code, only static files.
+  "name": "offline-page",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "./dist" },
+  "routes": [{ "pattern": "offlinepage.app", "custom_domain": true }]
+}
