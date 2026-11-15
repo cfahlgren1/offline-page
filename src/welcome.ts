@@ -1,5 +1,5 @@
 /** The first page a new visitor sees. It doubles as the instructions, so every claim in it matches what the models do. */
-export const WELCOME_TITLE = "Welcome to offline.page";
+export const WELCOME_TITLE = "Welcome to offlinepage.app";
 
 export const WELCOME_MARKDOWN = `# ${WELCOME_TITLE}
 

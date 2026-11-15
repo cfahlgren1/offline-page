@@ -1,4 +1,4 @@
-# offline.page
+# offlinepage.app
 
 > A free Markdown writing app with autocorrect and autocomplete that run entirely in the browser and keep working offline. Nothing typed is sent to a server.
 

@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="offline.page: autocorrect and autocomplete that work in airplane mode" src="../brand/banner.png" width="880">
+  <img alt="offlinepage.app: autocorrect and autocomplete that work in airplane mode" src="../brand/banner.png" width="880">
 </p>
 
 <p align="center">
@@ -8,7 +8,7 @@
   <a href="https://huggingface.co/paperweight/tinynext">tinynext</a>
 </p>
 
-**offline.page** is a Markdown writing app with autocorrect and autocomplete that run entirely in your browser tab. Two tiny models, about 15 MB together, no server, and once the page has loaded it keeps working with Wi‑Fi off.
+**offlinepage.app** is a Markdown writing app with autocorrect and autocomplete that run entirely in your browser tab. Two tiny models, about 15 MB together, no server, and once the page has loaded it keeps working with Wi‑Fi off.
 
 ## The models
 

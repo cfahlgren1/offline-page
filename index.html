@@ -6,16 +6,16 @@
     <meta name="description" content="A free Markdown writing app with autocorrect and autocomplete that run in your browser and keep working in airplane mode. No account, nothing you type leaves your device." />
     <link rel="canonical" href="https://offlinepage.app/" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="offline.page" />
+    <meta property="og:site_name" content="offlinepage.app" />
     <meta property="og:url" content="https://offlinepage.app/" />
-    <meta property="og:title" content="offline.page: a writing app that works in airplane mode" />
+    <meta property="og:title" content="offlinepage.app: a writing app that works in airplane mode" />
     <meta property="og:description" content="Autocorrect and autocomplete from two tiny models that run in your browser tab. No account, nothing you type leaves your device." />
     <meta property="og:image" content="https://offlinepage.app/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="offline.page. Writes with you, even in airplane mode." />
+    <meta property="og:image:alt" content="offlinepage.app. Writes with you, even in airplane mode." />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="offline.page: a writing app that works in airplane mode" />
+    <meta name="twitter:title" content="offlinepage.app: a writing app that works in airplane mode" />
     <meta name="twitter:description" content="Autocorrect and autocomplete from two tiny models that run in your browser tab. No account, nothing you type leaves your device." />
     <meta name="twitter:image" content="https://offlinepage.app/og.png" />
     <meta name="theme-color" content="#fbfbf9" media="(prefers-color-scheme: light)" />
@@ -23,9 +23,9 @@
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <title>offline.page: a writing app with autocorrect that works offline</title>
+    <title>offlinepage.app: a writing app with autocorrect that works offline</title>
     <script type="application/ld+json">
-      {"@context":"https://schema.org","@type":"WebApplication","name":"offline.page","url":"https://offlinepage.app/","description":"A Markdown writing app with autocorrect and autocomplete that run in your browser and keep working offline.","applicationCategory":"ProductivityApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript and WebAssembly","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"image":"https://offlinepage.app/og.png"}
+      {"@context":"https://schema.org","@type":"WebApplication","name":"offlinepage.app","url":"https://offlinepage.app/","description":"A Markdown writing app with autocorrect and autocomplete that run in your browser and keep working offline.","applicationCategory":"ProductivityApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript and WebAssembly","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"image":"https://offlinepage.app/og.png"}
     </script>
     <!-- Sets the sidebar and theme before the first paint, so the page doesn't shift or flash while the app loads. -->
     <script>
@@ -47,7 +47,7 @@
   <body>
     <aside id="sidebar" class="sidebar" aria-label="Pages and models">
       <div class="flex items-center justify-between">
-        <span class="side-brand">offline<i>.page</i></span>
+        <span class="side-brand">offlinepage<i>.app</i></span>
         <span class="ml-auto"></span>
         <button class="side-icon more-button" type="button" aria-label="More" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.5" cy="8" r="1.1" /><circle cx="8" cy="8" r="1.1" /><circle cx="12.5" cy="8" r="1.1" /></svg></button>
         <button id="sidebar-close" class="side-icon" type="button" aria-label="Hide the sidebar" title="Hide the sidebar (⌘\)">
@@ -63,6 +63,13 @@
       <div class="min-h-6 flex-1"></div>
 
       <div class="models" role="group" aria-label="On-device models">
+        <div class="flex items-center gap-2">
+          <p class="side-caption mt-0">On this device</p>
+          <span id="models-status" class="min-w-0 flex-1 truncate font-sans text-[11px] text-side-faint data-[error]:text-error">Loading…</span>
+          <button id="models-info-button" class="side-icon -mr-1.5" type="button" aria-label="About the models" aria-haspopup="dialog" aria-expanded="false">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.75" /><path d="M8 7.25v3.5" stroke-linecap="round" /><circle cx="8" cy="5.1" r="0.55" fill="currentColor" stroke="none" /></svg>
+          </button>
+        </div>
         <button id="toggle-tinyfix" class="model" type="button" role="switch" aria-checked="true">
           <span class="model-n">01</span><span class="model-name">tiny<i class="text-context">fix</i></span><span class="leader"></span><span class="pill"></span>
         </button>
@@ -74,10 +81,7 @@
         </button>
       </div>
       <div class="side-foot">
-        <span id="models-status" class="group inline-flex min-w-0 items-center gap-1.5 data-[error]:text-error">
-          <i class="size-1.5 flex-none rounded-full bg-faint group-data-[ready]:bg-ok group-data-[error]:bg-error"></i><span id="model-status" class="truncate">Loading models…</span>
-        </span>
-        <a class="flex-none hover:text-sub" href="https://huggingface.co/paperweight" target="_blank" rel="noopener">🤗 Hugging Face ↗</a>
+        <a class="hover:text-side-ink" href="https://huggingface.co/paperweight" target="_blank" rel="noopener">🤗 Hugging Face ↗</a>
       </div>
     </aside>
 
@@ -87,10 +91,11 @@
         <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2.5" width="12" height="11" rx="2.5" /><path d="M6.5 2.5v11" /></svg>
       </button>
       <button class="side-icon more-button" type="button" aria-label="More" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.5" cy="8" r="1.1" /><circle cx="8" cy="8" r="1.1" /><circle cx="12.5" cy="8" r="1.1" /></svg></button>
-      <span class="spine-title">offline<i>.page</i></span>
+      <span class="spine-title">offlinepage<i>.app</i></span>
       <span class="spine-dots" aria-hidden="true"><i id="spine-tinyfix"></i><i id="spine-tinynext"></i><i id="spine-capitals"></i></span>
     </div>
     <div id="backdrop" class="backdrop"></div>
+    <div id="models-info" class="info-card" role="dialog" aria-label="About the models" hidden></div>
     <div id="more-menu" class="menu" role="menu" hidden>
       <button id="export" class="menu-item" type="button" role="menuitem">Export as Markdown</button>
       <button id="copy" class="menu-item" type="button" role="menuitem">Copy Markdown</button>

@@ -136,6 +136,18 @@
     scrollbar-gutter: stable;
   }
 
+  /* Thin scrollbars in the page's own greys, with no track. */
+  html,
+  .prose pre {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+
+  .pages {
+    scrollbar-width: thin;
+    scrollbar-color: var(--leader) transparent;
+  }
+
   /* index.html carries the welcome page as plain HTML for a first visit. Someone with saved pages never sees it. */
   :root[data-returning] #welcome-static {
     display: none;
@@ -407,7 +419,7 @@
   }
 
   .side-foot {
-    @apply flex items-center justify-between gap-3 pt-2.5 font-sans text-[11.5px] text-side-faint;
+    @apply pt-2.5 font-sans text-[11.5px] text-side-faint;
   }
 
   .spine {
@@ -508,6 +520,31 @@
   /* Placed next to whichever ⋯ button opened it (sidebar or spine). */
   .menu {
     @apply fixed z-40 w-48 rounded-xl bg-surface p-1 font-sans shadow-float;
+  }
+
+  /* The card behind the sidebar's info button: what each switch does, in a sentence. */
+  .info-card {
+    @apply fixed z-40 w-[min(300px,calc(100vw-24px))] rounded-[14px] bg-surface px-4 py-1 font-sans text-ink shadow-float;
+  }
+
+  .info-row {
+    @apply border-b border-line py-3 last:border-0;
+  }
+
+  .info-name {
+    @apply text-[13px] font-[650] tracking-[-0.01em];
+  }
+
+  .info-kind {
+    @apply text-[11.5px] text-sub;
+  }
+
+  .info-text {
+    @apply mt-1 text-[12.5px] leading-[1.45] text-sub;
+  }
+
+  .info-link {
+    @apply flex-none text-[11.5px] text-sub underline decoration-line underline-offset-2 hover:text-ink;
   }
 
   .menu-item {

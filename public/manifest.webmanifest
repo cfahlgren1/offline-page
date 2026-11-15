@@ -1,6 +1,6 @@
 {
-  "name": "offline.page",
-  "short_name": "offline.page",
+  "name": "offlinepage.app",
+  "short_name": "offlinepage.app",
   "description": "A writing app with autocorrect and autocomplete that work in airplane mode.",
   "start_url": "./",
   "scope": "./",

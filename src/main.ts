@@ -1,5 +1,5 @@
 import type { Editor, JSONContent } from "@tiptap/core";
-import { MODELS, type ModelId } from "./brand";
+import { MODELS, hubUrl, type ModelId } from "./brand";
 import { createEditor } from "./editor";
 import { revertFix, type AppliedFix } from "./extensions/autocorrect";
 import { suggestionsKey } from "./extensions/suggestions";
@@ -39,7 +39,8 @@ const ui = {
   meta: element("meta"),
   editorHost: element("editor"),
   modelsStatus: element("models-status"),
-  modelStatus: element("model-status"),
+  modelsInfo: element("models-info"),
+  modelsInfoButton: element<HTMLButtonElement>("models-info-button"),
   capitalsToggle: element<HTMLButtonElement>("toggle-capitals"),
   capitalsSpine: element("spine-capitals"),
 };
@@ -112,7 +113,7 @@ function renderMeta(): void {
   const words = countWords(editor);
   const title = titleOf(editor);
   ui.meta.textContent = `${date} · ${words.toLocaleString()} ${words === 1 ? "word" : "words"}`;
-  document.title = `${title} · offline.page`;
+  document.title = `${title} · offlinepage.app`;
 }
 
 // ---- Documents ---------------------------------------------------------------
@@ -380,17 +381,66 @@ let loadMilliseconds = 0;
 let worksOffline = false;
 let loadError = "";
 
+/** The sidebar only says something while the models load or when they fail. Once they're ready it stays quiet. */
 function renderStatus(): void {
-  const text = {
-    loading: "Loading models…",
-    ready: worksOffline ? "Works offline" : `Models ready in ${loadMilliseconds} ms`,
-    error: "Models couldn’t load",
-  }[modelState];
-  ui.modelStatus.textContent = text;
+  ui.modelsStatus.textContent = { loading: "Loading…", ready: "", error: "Couldn’t load" }[modelState];
   ui.modelsStatus.title = modelState === "error" ? `Writing and saving still work. ${loadError}` : "";
   ui.modelsStatus.toggleAttribute("data-ready", modelState === "ready");
   ui.modelsStatus.toggleAttribute("data-error", modelState === "error");
+  if (!ui.modelsInfo.hidden) renderModelsInfo();
 }
+
+const CAPITALS_INFO = "Capitals for sentence starts, days and months. Rules, with no model.";
+
+function modelsInfoFooter(): string {
+  if (modelState === "error") return "The models couldn’t load. Writing and saving still work.";
+  if (modelState === "loading") return "Loading the models…";
+  const loaded = `Loaded in ${loadMilliseconds} ms.`;
+  return worksOffline ? `Everything runs in this tab and is saved for offline use. ${loaded}` : `Everything runs in this tab. ${loaded}`;
+}
+
+/** What each switch does, in a sentence, with a link to the model. All of the text comes from this file and brand.ts. */
+function renderModelsInfo(): void {
+  const rows = MODEL_IDS.map(
+    (id) => `<div class="info-row">
+      <div class="flex items-baseline justify-between gap-3">
+        <span><span class="info-name">${MODELS[id].name}</span> <span class="info-kind">${MODELS[id].role} · ${MODELS[id].size}</span></span>
+        <a class="info-link" href="${hubUrl(id)}" target="_blank" rel="noopener">Model ↗</a>
+      </div>
+      <p class="info-text">${MODELS[id].caveat}</p>
+    </div>`,
+  );
+  ui.modelsInfo.innerHTML = `${rows.join("")}
+    <div class="info-row"><span class="info-name">capitals</span><p class="info-text">${CAPITALS_INFO}</p></div>
+    <div class="info-row"><p class="info-text mt-0">${modelsInfoFooter()}</p></div>`;
+}
+
+const closeInfoOnOutsideClick = (event: MouseEvent): void => {
+  const target = event.target as Node;
+  if (!ui.modelsInfo.contains(target) && !ui.modelsInfoButton.contains(target)) closeModelsInfo();
+};
+
+function closeModelsInfo(): void {
+  ui.modelsInfo.hidden = true;
+  ui.modelsInfoButton.setAttribute("aria-expanded", "false");
+  document.removeEventListener("mousedown", closeInfoOnOutsideClick);
+}
+
+/** Opens the card above the button, since the button sits at the bottom of the sidebar. */
+function openModelsInfo(): void {
+  renderModelsInfo();
+  const box = ui.modelsInfoButton.getBoundingClientRect();
+  ui.modelsInfo.style.bottom = `${window.innerHeight - box.top + 8}px`;
+  ui.modelsInfo.style.left = `${Math.max(12, Math.min(box.left - 8, window.innerWidth - 312))}px`;
+  ui.modelsInfo.hidden = false;
+  ui.modelsInfoButton.setAttribute("aria-expanded", "true");
+  document.addEventListener("mousedown", closeInfoOnOutsideClick);
+}
+
+ui.modelsInfoButton.addEventListener("click", () => (ui.modelsInfo.hidden ? openModelsInfo() : closeModelsInfo()));
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !ui.modelsInfo.hidden) closeModelsInfo();
+});
 
 function renderModelToggles(): void {
   for (const id of MODEL_IDS) {

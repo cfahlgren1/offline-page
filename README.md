@@ -13,7 +13,7 @@ models:
   - paperweight/tinynext
 ---
 
-# offline.page
+# offlinepage.app
 
 A Markdown writing app with autocorrect and autocomplete that run entirely in your browser. About 15 MB of models, no server, and once the page has loaded it keeps working with Wi‑Fi off.
 

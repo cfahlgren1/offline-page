@@ -1,4 +1,4 @@
-/* Shared tokens for the offline.page brand images. Light by default; html.dark for the dark variant. */
+/* Shared tokens for the offlinepage.app brand images. Light by default; html.dark for the dark variant. */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg: #f4f3ef; --ink: #121214; --body: #2a2a2c; --sub: #6e6e73; --faint: #9c9ca1; --line: #dedcd6; --card: #ffffff;
