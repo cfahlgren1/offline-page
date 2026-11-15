@@ -51,7 +51,15 @@ export async function loadModels(): Promise<Models> {
   await nextTask();
   const wordList = parseWordList(words);
   await nextTask();
-  const trie = await WordTrie.inSteps(wordList.map((entry) => entry.word), nextTask);
-  const fixer = new Fixer({ words: wordList, trie, scorer: wrongWord, weights: { ...WITH_MODEL_WEIGHTS, minConfidence: SPELLING_MIN_CONFIDENCE } });
+  const trie = await WordTrie.inSteps(
+    wordList.map((entry) => entry.word),
+    nextTask,
+  );
+  const fixer = new Fixer({
+    words: wordList,
+    trie,
+    scorer: wrongWord,
+    weights: { ...WITH_MODEL_WEIGHTS, minConfidence: SPELLING_MIN_CONFIDENCE },
+  });
   return { fixer, wrongWord };
 }

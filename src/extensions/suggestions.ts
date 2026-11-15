@@ -109,7 +109,10 @@ export const Suggestions = Extension.create<SuggestionsOptions>({
           if (view.isDestroyed) return;
           const now = contextAtCursor(view.state);
           if (!now || now.context !== at.context || now.pos !== at.pos) return;
-          const meta: Meta = text.length >= MIN_SUGGESTION_CHARS ? { type: "show", ghost: { context: at.context, pos: at.pos, text } } : { type: "clear" };
+          const meta: Meta =
+            text.length >= MIN_SUGGESTION_CHARS
+              ? { type: "show", ghost: { context: at.context, pos: at.pos, text } }
+              : { type: "clear" };
           view.dispatch(view.state.tr.setMeta(suggestionsKey, meta));
         })
         .catch((error: unknown) => console.error("Suggestion failed", error))
@@ -142,7 +145,9 @@ export const Suggestions = Extension.create<SuggestionsOptions>({
           decorations(state) {
             const ghost = suggestionsKey.getState(state);
             if (!ghost?.text) return null;
-            return DecorationSet.create(state.doc, [Decoration.widget(ghost.pos, () => ghostElement(ghost.text), { side: 1, key: `ghost-${ghost.text}` })]);
+            return DecorationSet.create(state.doc, [
+              Decoration.widget(ghost.pos, () => ghostElement(ghost.text), { side: 1, key: `ghost-${ghost.text}` }),
+            ]);
           },
         },
         view: () => ({

@@ -53,12 +53,12 @@ npm run build    # typecheck, build to dist/, write the offline service worker
 npm run brand    # re-render the images in brand/ (set CHROMIUM_PATH, or have Chrome installed)
 ```
 
-| Path | What's there |
-| --- | --- |
-| `src/extensions/autocorrect.ts` | When to check words, applying fixes, Backspace to undo |
-| `src/extensions/suggestions.ts` | Gray suggested text and Tab to accept |
-| `src/extensions/slashMenu.ts` | The `/` block menu |
-| `src/tinyfix/` | Dictionary, typo costs and the wrong-word checker |
-| `src/tinynext/` | tinynext's tokenizer, decoding and Web Worker |
-| `scripts/write-service-worker.mjs` | Generates the offline cache after each build |
-| `brand/` | Marks, banners and the HTML they're rendered from |
+| Path                               | What's there                                           |
+| ---------------------------------- | ------------------------------------------------------ |
+| `src/extensions/autocorrect.ts`    | When to check words, applying fixes, Backspace to undo |
+| `src/extensions/suggestions.ts`    | Gray suggested text and Tab to accept                  |
+| `src/extensions/slashMenu.ts`      | The `/` block menu                                     |
+| `src/tinyfix/`                     | Dictionary, typo costs and the wrong-word checker      |
+| `src/tinynext/`                    | tinynext's tokenizer, decoding and Web Worker          |
+| `scripts/write-service-worker.mjs` | Generates the offline cache after each build           |
+| `brand/`                           | Marks, banners and the HTML they're rendered from      |

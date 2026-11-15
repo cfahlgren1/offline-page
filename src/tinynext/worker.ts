@@ -15,7 +15,9 @@ export interface ModelFiles {
   runtime: ArrayBuffer;
 }
 
-export type WorkerRequest = { type: "load"; files: ModelFiles } | { type: "suggest"; id: number; before: string; after: string };
+export type WorkerRequest =
+  | { type: "load"; files: ModelFiles }
+  | { type: "suggest"; id: number; before: string; after: string };
 export type WorkerReply =
   | { type: "loaded"; milliseconds: number }
   | { type: "failed"; error: string }
@@ -34,7 +36,8 @@ function expand(manifest: WeightsManifest, q8: ArrayBuffer): Uint8Array {
     const values = new Int8Array(q8, tensor.q_offset, tensor.count);
     const scales = new Float32Array(q8, tensor.scale_offset, Math.ceil(tensor.count / manifest.block));
     const start = tensor.f32_offset / 4;
-    for (let index = 0; index < tensor.count; index++) out[start + index] = values[index]! * scales[Math.floor(index / manifest.block)]!;
+    for (let index = 0; index < tensor.count; index++)
+      out[start + index] = values[index]! * scales[Math.floor(index / manifest.block)]!;
   }
   return new Uint8Array(out.buffer);
 }
@@ -54,7 +57,12 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         executionProviders: ["wasm"],
         externalData: [{ path: "weights.f32", data: expand(manifest, weights) }],
       });
-      suggester = new Suggester(ort, session, new Tokenizer(tokenizer as ConstructorParameters<typeof Tokenizer>[0]), config);
+      suggester = new Suggester(
+        ort,
+        session,
+        new Tokenizer(tokenizer as ConstructorParameters<typeof Tokenizer>[0]),
+        config,
+      );
       post({ type: "loaded", milliseconds: performance.now() - began });
     } catch (error) {
       post({ type: "failed", error: String(error) });

@@ -86,7 +86,11 @@ function saveNow(): void {
 
 function renderMeta(): void {
   if (!editor || !current) return;
-  const date = new Date(current.createdAt).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const date = new Date(current.createdAt).toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
   const words = countWords(editor);
   const title = titleOf(editor);
   ui.meta.textContent = `${date} · ${words.toLocaleString()} ${words === 1 ? "word" : "words"}`;
@@ -133,7 +137,8 @@ function open(saved: DocRecord, opened?: OpenContent, focus: "start" | "end" = "
   if (isDrawer()) setSidebar(false);
 }
 
-const openWelcome = () => open(store.create({ type: "doc" }, WELCOME_TITLE), { type: "markdown", content: WELCOME_MARKDOWN });
+const openWelcome = () =>
+  open(store.create({ type: "doc" }, WELCOME_TITLE), { type: "markdown", content: WELCOME_MARKDOWN });
 const openNew = () => {
   const doc = store.create({ type: "doc", content: [{ type: "heading", attrs: { level: 1 } }] }, "Untitled");
   open(doc, { type: "json", content: doc.content }, "end");
@@ -177,7 +182,12 @@ function when(timestamp: number): string {
   if (date.toDateString() === new Date().toDateString()) {
     // The time without AM/PM, which the sidebar has no room for: "9:41".
     const parts = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).formatToParts(date);
-    return parts.filter((part) => part.type === "hour" || part.type === "minute" || (part.type === "literal" && part.value.trim())).map((part) => part.value).join("");
+    return parts
+      .filter(
+        (part) => part.type === "hour" || part.type === "minute" || (part.type === "literal" && part.value.trim()),
+      )
+      .map((part) => part.value)
+      .join("");
   }
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
@@ -257,7 +267,11 @@ document.addEventListener("keydown", (event) => {
 
 // ---- Export ------------------------------------------------------------------
 
-const slug = (title: string): string => title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "untitled";
+const slug = (title: string): string =>
+  title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "untitled";
 
 function flash(target: HTMLButtonElement, text: string): void {
   const label = target.dataset.label ?? target.textContent ?? "";
@@ -435,7 +449,8 @@ for (const id of MODEL_IDS) {
   element<HTMLButtonElement>(`toggle-${id}`).addEventListener("click", () => {
     settings.setModelOn(id, !settings.isModelOn(id));
     renderModelToggles();
-    if (id === "tinynext" && editor && !settings.isModelOn(id)) editor.view.dispatch(editor.state.tr.setMeta(suggestionsKey, { type: "clear" }));
+    if (id === "tinynext" && editor && !settings.isModelOn(id))
+      editor.view.dispatch(editor.state.tr.setMeta(suggestionsKey, { type: "clear" }));
   });
   infoButton(id).addEventListener("click", () => (openInfo === id ? closeModelInfo() : openModelInfo(id)));
 }
@@ -497,7 +512,9 @@ async function startOfflineCache(): Promise<void> {
   if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
   if (navigator.serviceWorker.controller) {
     worksOffline = true;
-    navigator.serviceWorker.register("./sw.js").catch((error: unknown) => console.error("Offline cache update failed", error));
+    navigator.serviceWorker
+      .register("./sw.js")
+      .catch((error: unknown) => console.error("Offline cache update failed", error));
     return;
   }
   try {

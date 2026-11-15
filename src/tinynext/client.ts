@@ -47,7 +47,11 @@ export class TinyNextClient {
           this.pending.delete(reply.id);
         }
       };
-      this.worker.postMessage({ type: "load", files } satisfies WorkerRequest, [files.graph, files.weights, files.runtime]);
+      this.worker.postMessage({ type: "load", files } satisfies WorkerRequest, [
+        files.graph,
+        files.weights,
+        files.runtime,
+      ]);
     });
   }
 

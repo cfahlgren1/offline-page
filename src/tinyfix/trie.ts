@@ -76,7 +76,12 @@ export class WordTrie {
       }
     };
 
-    walk(0, -1, Uint8Array.from({ length: width }, (_, column) => column), null);
+    walk(
+      0,
+      -1,
+      Uint8Array.from({ length: width }, (_, column) => column),
+      null,
+    );
     return matches;
   }
 }

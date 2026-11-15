@@ -1,12 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "typescript",
-    "unicorn",
-    "oxc",
-    "import",
-    "promise"
-  ],
+  "plugins": ["typescript", "unicorn", "oxc", "import", "promise"],
   "categories": {
     "correctness": "error",
     "suspicious": "error",
@@ -16,19 +10,14 @@
     "browser": true,
     "es2024": true
   },
-  "ignorePatterns": [
-    "dist",
-    "brand/src/dither.js"
-  ],
+  "ignorePatterns": ["dist", "brand/src/dither.js"],
   "rules": {
     "no-unused-vars": "error",
     "eqeqeq": "error",
     "no-console": [
       "error",
       {
-        "allow": [
-          "error"
-        ]
+        "allow": ["error"]
       }
     ],
     "typescript/no-explicit-any": "error",
@@ -46,9 +35,7 @@
     "import/no-unassigned-import": [
       "error",
       {
-        "allow": [
-          "**/*.css"
-        ]
+        "allow": ["**/*.css"]
       }
     ],
     "oxc/no-map-spread": "off",
@@ -57,11 +44,7 @@
   },
   "overrides": [
     {
-      "files": [
-        "scripts/**",
-        "brand/**",
-        "vite.config.ts"
-      ],
+      "files": ["scripts/**", "brand/**", "vite.config.ts"],
       "rules": {
         "no-console": "off"
       }

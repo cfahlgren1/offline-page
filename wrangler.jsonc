@@ -3,5 +3,5 @@
   "name": "offline-page",
   "compatibility_date": "2026-11-01",
   "assets": { "directory": "./dist" },
-  "routes": [{ "pattern": "offlinepage.app", "custom_domain": true }]
+  "routes": [{ "pattern": "offlinepage.app", "custom_domain": true }],
 }

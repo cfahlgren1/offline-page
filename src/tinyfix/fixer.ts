@@ -55,14 +55,20 @@ export function parseWordList(text: string): WordEntry[] {
   });
 }
 
-export function pickCandidate(candidates: readonly Candidate[], weights: FixerWeights): { word: string; confidence: number } | null {
+export function pickCandidate(
+  candidates: readonly Candidate[],
+  weights: FixerWeights,
+): { word: string; confidence: number } | null {
   if (candidates.length === 0) return null;
   const scored = candidates.map((candidate) => ({
     word: candidate.word,
     score: -candidate.cost + weights.frequency * candidate.logFrequency + weights.context * candidate.contextGain,
   }));
   const best = scored.reduce((top, entry) => (entry.score > top.score ? entry : top));
-  const total = scored.reduce((sum, entry) => sum + Math.exp(entry.score - best.score), Math.exp(-weights.keepCost - best.score));
+  const total = scored.reduce(
+    (sum, entry) => sum + Math.exp(entry.score - best.score),
+    Math.exp(-weights.keepCost - best.score),
+  );
   const confidence = 1 / total;
   return confidence >= weights.minConfidence ? { word: best.word, confidence } : null;
 }
@@ -106,13 +112,21 @@ export class Fixer {
       .search(lower, maxEdits)
       .map(({ index }) => {
         const entry = this.words[index]!;
-        return { word: entry.word, cost: typoCost(lower, entry.word), logFrequency: Math.log(entry.count / this.totalCount), contextGain: 0 };
+        return {
+          word: entry.word,
+          cost: typoCost(lower, entry.word),
+          logFrequency: Math.log(entry.count / this.totalCount),
+          contextGain: 0,
+        };
       })
       .sort((first, second) => second.logFrequency - second.cost - (first.logFrequency - first.cost))
       .slice(0, this.maxCandidates);
     if (!this.scorer || ranked.length === 0) return ranked;
 
-    const scores = await this.scorer.score(textBefore, [word, ...ranked.map((candidate) => matchCase(word, candidate.word))]);
+    const scores = await this.scorer.score(textBefore, [
+      word,
+      ...ranked.map((candidate) => matchCase(word, candidate.word)),
+    ]);
     const typedScore = scores[0]!;
     return ranked.map((candidate, index) => ({ ...candidate, contextGain: scores[index + 1]! - typedScore }));
   }

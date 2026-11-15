@@ -11,8 +11,10 @@ const SOURCE_LABEL = {
 } as const satisfies Record<FixKind, string>;
 
 function explain(fix: AppliedFix): string {
-  if (fix.kind === "spelling") return `“${fix.original}” isn’t in the dictionary. “${fix.replacement}” is the closest common word.`;
-  if (fix.typedAfter) return `Fixed when you typed “${fix.typedAfter}”. The words around it fit “${fix.replacement}” better.`;
+  if (fix.kind === "spelling")
+    return `“${fix.original}” isn’t in the dictionary. “${fix.replacement}” is the closest common word.`;
+  if (fix.typedAfter)
+    return `Fixed when you typed “${fix.typedAfter}”. The words around it fit “${fix.replacement}” better.`;
   return `The words around it fit “${fix.replacement}” better.`;
 }
 
@@ -53,7 +55,8 @@ export class FixPopover {
         </button>
       </div>`;
     this.element.querySelector(".fix-kind-label")!.textContent = KIND_LABEL[fix.kind];
-    this.element.querySelector(".fix-source")!.textContent = `${SOURCE_LABEL[fix.kind]} · ${formatMilliseconds(fix.milliseconds)}`;
+    this.element.querySelector(".fix-source")!.textContent =
+      `${SOURCE_LABEL[fix.kind]} · ${formatMilliseconds(fix.milliseconds)}`;
     this.element.querySelector("s")!.textContent = fix.original;
     this.element.querySelector("b")!.textContent = fix.replacement;
     this.element.querySelector(".fix-why")!.textContent = explain(fix);

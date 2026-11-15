@@ -12,14 +12,44 @@ interface Block {
 
 const BLOCKS: Block[] = [
   { title: "Text", hint: "Plain paragraph", icon: "T", markdown: "", run: (chain) => chain.setParagraph() },
-  { title: "Heading", hint: "Big section title", icon: "H1", markdown: "#", run: (chain) => chain.setNode("heading", { level: 1 }) },
-  { title: "Heading 2", hint: "Medium section title", icon: "H2", markdown: "##", run: (chain) => chain.setNode("heading", { level: 2 }) },
-  { title: "Heading 3", hint: "Small section title", icon: "H3", markdown: "###", run: (chain) => chain.setNode("heading", { level: 3 }) },
+  {
+    title: "Heading",
+    hint: "Big section title",
+    icon: "H1",
+    markdown: "#",
+    run: (chain) => chain.setNode("heading", { level: 1 }),
+  },
+  {
+    title: "Heading 2",
+    hint: "Medium section title",
+    icon: "H2",
+    markdown: "##",
+    run: (chain) => chain.setNode("heading", { level: 2 }),
+  },
+  {
+    title: "Heading 3",
+    hint: "Small section title",
+    icon: "H3",
+    markdown: "###",
+    run: (chain) => chain.setNode("heading", { level: 3 }),
+  },
   { title: "Bulleted list", hint: "Simple list", icon: "•", markdown: "-", run: (chain) => chain.toggleBulletList() },
-  { title: "Numbered list", hint: "List with numbers", icon: "1.", markdown: "1.", run: (chain) => chain.toggleOrderedList() },
+  {
+    title: "Numbered list",
+    hint: "List with numbers",
+    icon: "1.",
+    markdown: "1.",
+    run: (chain) => chain.toggleOrderedList(),
+  },
   { title: "Quote", hint: "Pull a line out", icon: "“", markdown: ">", run: (chain) => chain.toggleBlockquote() },
   { title: "Code", hint: "Monospace block", icon: "{}", markdown: "```", run: (chain) => chain.toggleCodeBlock() },
-  { title: "Divider", hint: "A line between sections", icon: "—", markdown: "---", run: (chain) => chain.setHorizontalRule() },
+  {
+    title: "Divider",
+    hint: "A line between sections",
+    icon: "—",
+    markdown: "---",
+    run: (chain) => chain.setHorizontalRule(),
+  },
 ];
 
 function matches(block: Block, query: string): boolean {

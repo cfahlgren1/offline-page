@@ -87,7 +87,9 @@ export function revertFix(view: EditorView, models: Models | null, id: number): 
   const found = findFix(view.state, id);
   if (!found) return;
   const meta: Meta = { type: "remove", id };
-  view.dispatch(closeHistory(view.state.tr.insertText(found.fix.original, found.from, found.to).setMeta(autocorrectKey, meta)));
+  view.dispatch(
+    closeHistory(view.state.tr.insertText(found.fix.original, found.from, found.to).setMeta(autocorrectKey, meta)),
+  );
   models?.fixer.rememberUndo(found.fix.original);
 }
 
@@ -105,7 +107,13 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
     let nextId = 1;
     let queue: Promise<unknown> = Promise.resolve();
 
-    const applyFix = (view: EditorView, from: number, correction: Correction, typedAfter: string, milliseconds: number): void => {
+    const applyFix = (
+      view: EditorView,
+      from: number,
+      correction: Correction,
+      typedAfter: string,
+      milliseconds: number,
+    ): void => {
       const to = from + correction.original.length;
       if (view.state.doc.textBetween(from, to) !== correction.original) return;
       const fix: AppliedFix = {
@@ -144,7 +152,11 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
         const start = offset + words[index]!.index;
         if (models.fixer.wasUndone(word)) continue;
         const began = performance.now();
-        const correction = await models.wrongWord.check(previousParagraph(view.state.doc, blockStart) + text.slice(0, start), word, text.slice(start + word.length));
+        const correction = await models.wrongWord.check(
+          previousParagraph(view.state.doc, blockStart) + text.slice(0, start),
+          word,
+          text.slice(start + word.length),
+        );
         if (!correction) continue;
         applyFix(view, blockStart + start, correction, text.slice(start + word.length), performance.now() - began);
         return;
@@ -171,16 +183,32 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
             const meta = tr.getMeta(autocorrectKey) as Meta | undefined;
             let decorations = value.decorations.map(tr.mapping, tr.doc);
             if (tr.docChanged) {
-              const stale = decorations.find().filter((decoration) => tr.doc.textBetween(decoration.from, decoration.to) !== fixSpec(decoration).replacement);
+              const stale = decorations
+                .find()
+                .filter(
+                  (decoration) =>
+                    tr.doc.textBetween(decoration.from, decoration.to) !== fixSpec(decoration).replacement,
+                );
               decorations = decorations.remove(stale);
             }
             if (meta?.type === "add") {
               const attributes = { class: `fix fix-${meta.fix.kind}`, "data-fix-id": String(meta.fix.id) };
-              const decoration = Decoration.inline(meta.from, meta.to, attributes, { fix: meta.fix, inclusiveStart: false, inclusiveEnd: false });
-              return { decorations: decorations.add(tr.doc, [decoration]), last: { id: meta.fix.id, cursor: newState.selection.head } };
+              const decoration = Decoration.inline(meta.from, meta.to, attributes, {
+                fix: meta.fix,
+                inclusiveStart: false,
+                inclusiveEnd: false,
+              });
+              return {
+                decorations: decorations.add(tr.doc, [decoration]),
+                last: { id: meta.fix.id, cursor: newState.selection.head },
+              };
             }
             if (meta?.type === "remove") {
-              const removed = decorations.find(undefined, undefined, (spec) => (spec as { fix: AppliedFix }).fix.id === meta.id);
+              const removed = decorations.find(
+                undefined,
+                undefined,
+                (spec) => (spec as { fix: AppliedFix }).fix.id === meta.id,
+              );
               return { decorations: decorations.remove(removed), last: null };
             }
             const last = tr.docChanged || tr.selectionSet ? null : value.last;

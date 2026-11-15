@@ -27,7 +27,11 @@ export interface ModelConfig {
 
 /** Same as training: keyboard characters only, curly quotes and dashes made plain. */
 const SMART = new Map(Object.entries({ "‘": "'", "’": "'", "“": '"', "”": '"', "–": "-", "—": "-", "\t": " " }));
-const toAscii = (text: string) => [...text].map((char) => SMART.get(char) ?? char).join("").replace(/[^\x0a\x20-\x7e]/g, "");
+const toAscii = (text: string) =>
+  [...text]
+    .map((char) => SMART.get(char) ?? char)
+    .join("")
+    .replace(/[^\x0a\x20-\x7e]/g, "");
 
 interface Reading {
   ids: number[];
@@ -66,7 +70,11 @@ export class Suggester {
     const extends_ = old && old.ids.length <= ids.length && old.ids.every((id, index) => id === ids[index]);
     if (old && extends_ && old.ids.length === ids.length) return old;
     const start = old && extends_ ? old : null;
-    const next = await this.run(ids.slice(start ? start.ids.length : 0), start?.pastK ?? this.empty(), start?.pastV ?? this.empty());
+    const next = await this.run(
+      ids.slice(start ? start.ids.length : 0),
+      start?.pastK ?? this.empty(),
+      start?.pastV ?? this.empty(),
+    );
     this.reading = { ids, ...next };
     return this.reading;
   }
@@ -80,7 +88,10 @@ export class Suggester {
     const after = toAscii(afterRaw).slice(0, SUFFIX_CHARS);
     const space = before.lastIndexOf(" ");
     const newline = before.lastIndexOf("\n");
-    const [stem, healing] = space > newline ? [before.slice(0, space), before.slice(space)] : [before.slice(0, newline + 1), before.slice(newline + 1)];
+    const [stem, healing] =
+      space > newline
+        ? [before.slice(0, space), before.slice(space)]
+        : [before.slice(0, newline + 1), before.slice(newline + 1)];
     let need = healing;
     const prefix = stem ? this.tokenizer.encode(stem) : [EOT];
     const prompt = after ? [SUF, ...this.tokenizer.encode(after), PRE, ...prefix, MID] : prefix;
@@ -110,7 +121,8 @@ export class Suggester {
       confidence *= probability;
       generated += text;
       if (PUNCTUATION.includes(generated.trimEnd().slice(-1)) && generated.trim()) offer(generated, confidence);
-      if (confidence < CUTOFF || generated.length > MAX_CHARS || generated.trim().split(/\s+/).length > MAX_WORDS) break;
+      if (confidence < CUTOFF || generated.length > MAX_CHARS || generated.trim().split(/\s+/).length > MAX_WORDS)
+        break;
       ({ logits, pastK, pastV } = await this.run([id], pastK, pastV));
     }
     return best.trimEnd();

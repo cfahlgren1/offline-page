@@ -40,7 +40,9 @@ export class Tokenizer {
     this.pieces = new Array<string>(this.vocabSize);
     for (const [piece, id] of this.ids) this.pieces[id] = piece;
     this.specialCount = json.added_tokens.length;
-    json.model.merges.forEach((merge, rank) => this.ranks.set(typeof merge === "string" ? merge : merge.join(" "), rank));
+    json.model.merges.forEach((merge, rank) =>
+      this.ranks.set(typeof merge === "string" ? merge : merge.join(" "), rank),
+    );
     this.toChar.forEach((char, byte) => this.toByte.set(char, byte));
   }
 

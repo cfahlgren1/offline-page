@@ -18,7 +18,14 @@ function buildNeighbors(): Map<string, Set<string>> {
   KEYBOARD_ROWS.forEach((row, rowIndex) => {
     [...row].forEach((key, keyIndex) => {
       const near = new Set<string>();
-      for (const [otherRow, shift] of [[rowIndex, -1], [rowIndex, 1], [rowIndex - 1, 0], [rowIndex - 1, 1], [rowIndex + 1, -1], [rowIndex + 1, 0]] as const) {
+      for (const [otherRow, shift] of [
+        [rowIndex, -1],
+        [rowIndex, 1],
+        [rowIndex - 1, 0],
+        [rowIndex - 1, 1],
+        [rowIndex + 1, -1],
+        [rowIndex + 1, 0],
+      ] as const) {
         const other = KEYBOARD_ROWS[otherRow]?.[keyIndex + shift];
         if (other) near.add(other);
       }
@@ -59,8 +66,10 @@ export function typoCost(typed: string, intended: string): number {
   const columns = intended.length + 1;
   const table: number[][] = Array.from({ length: rows }, () => new Array<number>(columns).fill(0));
 
-  for (let row = 1; row < rows; row++) table[row]![0] = table[row - 1]![0]! + extraKeyCost(typed, row - 1) + start(row - 1);
-  for (let column = 1; column < columns; column++) table[0]![column] = table[0]![column - 1]! + missedKeyCost(intended, column - 1) + start(column - 1);
+  for (let row = 1; row < rows; row++)
+    table[row]![0] = table[row - 1]![0]! + extraKeyCost(typed, row - 1) + start(row - 1);
+  for (let column = 1; column < columns; column++)
+    table[0]![column] = table[0]![column - 1]! + missedKeyCost(intended, column - 1) + start(column - 1);
 
   for (let row = 1; row < rows; row++) {
     for (let column = 1; column < columns; column++) {

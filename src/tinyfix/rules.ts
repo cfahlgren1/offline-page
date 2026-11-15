@@ -1,14 +1,37 @@
-const CONTRACTIONS: ReadonlyMap<string, string> = new Map(Object.entries({
-  arent: "aren't", cant: "can't", couldnt: "couldn't", didnt: "didn't", doesnt: "doesn't", dont: "don't",
-  hadnt: "hadn't", hasnt: "hasn't", havent: "haven't", im: "I'm", isnt: "isn't", ive: "I've",
-  shouldnt: "shouldn't", thats: "that's", theres: "there's", theyre: "they're", theyve: "they've",
-  wasnt: "wasn't", werent: "weren't", weve: "we've", whats: "what's", wont: "won't", wouldnt: "wouldn't",
-  youre: "you're", youve: "you've",
-}));
+const CONTRACTIONS: ReadonlyMap<string, string> = new Map(
+  Object.entries({
+    arent: "aren't",
+    cant: "can't",
+    couldnt: "couldn't",
+    didnt: "didn't",
+    doesnt: "doesn't",
+    dont: "don't",
+    hadnt: "hadn't",
+    hasnt: "hasn't",
+    havent: "haven't",
+    im: "I'm",
+    isnt: "isn't",
+    ive: "I've",
+    shouldnt: "shouldn't",
+    thats: "that's",
+    theres: "there's",
+    theyre: "they're",
+    theyve: "they've",
+    wasnt: "wasn't",
+    werent: "weren't",
+    weve: "we've",
+    whats: "what's",
+    wont: "won't",
+    wouldnt: "wouldn't",
+    youre: "you're",
+    youve: "you've",
+  }),
+);
 
 const BRITISH_OUR_ENDING = /(.{2,})our(s|ed|ing|ite|ites|ful|able|ably|less|hood|hoods|ly|ist|ists|er|ers)?$/;
 const BRITISH_ISE_ENDING = /(is|ys)(e|es|ed|ing|er|ers|ation|ations|able)$/;
-const BRITISH_DOUBLED_L = /^(un|re|mis|pre)?(travel|cancel|model|label|signal|fuel|level|total|marvel|counsel|jewel|tunnel|channel|shovel|dial|equal|quarrel|rival|panel|funnel|pencil|spiral|trial)l(ed|ing|er|ers|or|ors)$/;
+const BRITISH_DOUBLED_L =
+  /^(un|re|mis|pre)?(travel|cancel|model|label|signal|fuel|level|total|marvel|counsel|jewel|tunnel|channel|shovel|dial|equal|quarrel|rival|panel|funnel|pencil|spiral|trial)l(ed|ing|er|ers|or|ors)$/;
 const MIN_LENGTH_FOR_ISE_RULE = 7;
 /** "councillor", "panellist", "pedalling": a doubled l before an ending where American English has one. */
 const BRITISH_DOUBLED_L_ENDING = /ll(ed|ing|er|ers|or|ors|ist|ists|ous)$/;
@@ -59,11 +82,25 @@ export function isBritishSpelling(lower: string, isKnown: (word: string) => bool
   if (withOr !== lower && isKnown(withOr)) return true;
   const singleL = lower.replace(BRITISH_DOUBLED_L_ENDING, "l$1");
   if (singleL !== lower && isKnown(singleL)) return true;
-  const withEr = lower.length < MIN_LENGTH_FOR_RE_RULE ? lower : lower.replace(BRITISH_RE_ENDING, (_, before: string, ending = "") => `${before}er${ending === "d" ? "ed" : ending}`);
+  const withEr =
+    lower.length < MIN_LENGTH_FOR_RE_RULE
+      ? lower
+      : lower.replace(
+          BRITISH_RE_ENDING,
+          (_, before: string, ending = "") => `${before}er${ending === "d" ? "ed" : ending}`,
+        );
   if (withEr !== lower && isKnown(withEr)) return true;
-  if (lower.length >= MIN_LENGTH_FOR_DIGRAPH_RULE && BRITISH_DIGRAPH.test(lower) && isKnown(lower.replace(BRITISH_DIGRAPH, "e"))) return true;
+  if (
+    lower.length >= MIN_LENGTH_FOR_DIGRAPH_RULE &&
+    BRITISH_DIGRAPH.test(lower) &&
+    isKnown(lower.replace(BRITISH_DIGRAPH, "e"))
+  )
+    return true;
   if (lower.length < MIN_LENGTH_FOR_ISE_RULE) return false;
-  const withZ = lower.replace(BRITISH_ISE_ENDING, (_, stem: string, ending: string) => `${stem === "is" ? "iz" : "yz"}${ending}`);
+  const withZ = lower.replace(
+    BRITISH_ISE_ENDING,
+    (_, stem: string, ending: string) => `${stem === "is" ? "iz" : "yz"}${ending}`,
+  );
   return withZ !== lower && isKnown(withZ);
 }
 

@@ -72,7 +72,10 @@ export interface NearbyWord {
   isKnownMixup: boolean;
 }
 
-const pad = (ids: readonly number[], length: number): number[] => [...new Array<number>(length - ids.length).fill(PAD), ...ids];
+const pad = (ids: readonly number[], length: number): number[] => [
+  ...new Array<number>(length - ids.length).fill(PAD),
+  ...ids,
+];
 
 /** True for pairs like "services" and "service" or "continued" and "continues". */
 export function differsOnlyInEnding(first: string, second: string): boolean {
@@ -121,7 +124,11 @@ export class WrongWordChecker implements WrongWordFinder, ContextScorer {
     this.trie = new WordTrie(this.targets.map((index) => options.vocabulary[index]!));
     for (const line of options.confusions ?? []) {
       const [typed, ...meant] = line.split(" ").map((token) => this.ids.get(token));
-      if (typed !== undefined) this.knownMixups.set(typed, meant.filter((id) => id !== undefined));
+      if (typed !== undefined)
+        this.knownMixups.set(
+          typed,
+          meant.filter((id) => id !== undefined),
+        );
     }
   }
 
@@ -145,7 +152,12 @@ export class WrongWordChecker implements WrongWordFinder, ContextScorer {
   }
 
   /** Returns nearby words with how well each fits, or null when the word isn't one the model can judge. */
-  async compare(textBefore: string, word: string, textAfter: string, onlyKnownMixups = false): Promise<NearbyWord[] | null> {
+  async compare(
+    textBefore: string,
+    word: string,
+    textAfter: string,
+    onlyKnownMixups = false,
+  ): Promise<NearbyWord[] | null> {
     const typed = this.ids.get(word.toLowerCase());
     if (typed === undefined || typed < SPECIAL_TOKENS) return null;
     const nearby = onlyKnownMixups ? (this.knownMixups.get(typed) ?? []) : this.nearbyIds(typed);
@@ -157,7 +169,12 @@ export class WrongWordChecker implements WrongWordFinder, ContextScorer {
       const nearbyWord = this.options.vocabulary[id]!;
       const cost = typoCost(word.toLowerCase(), nearbyWord);
       const isKnownMixup = mixups.includes(id);
-      return { word: nearbyWord, margin: scores[index + 1]! - scores[0]!, cost: isKnownMixup ? Math.min(cost, MAX_KNOWN_MIXUP_COST) : cost, isKnownMixup };
+      return {
+        word: nearbyWord,
+        margin: scores[index + 1]! - scores[0]!,
+        cost: isKnownMixup ? Math.min(cost, MAX_KNOWN_MIXUP_COST) : cost,
+        isKnownMixup,
+      };
     });
   }
 
@@ -165,22 +182,37 @@ export class WrongWordChecker implements WrongWordFinder, ContextScorer {
   async score(textBefore: string, words: readonly string[]): Promise<number[]> {
     const ids = [UNKNOWN, ...words.slice(1).map((word) => this.ids.get(word.toLowerCase()) ?? UNKNOWN)];
     const rows: number[][] = [];
-    for (let start = 0; start < ids.length; start += MAX_NEIGHBORS) rows.push([PAD, ...ids.slice(start, start + MAX_NEIGHBORS)]);
+    for (let start = 0; start < ids.length; start += MAX_NEIGHBORS)
+      rows.push([PAD, ...ids.slice(start, start + MAX_NEIGHBORS)]);
     const scores = await this.runModel(textBefore, "", rows);
     return ids.map((_, index) => scores[Math.floor(index / MAX_NEIGHBORS) * CANDIDATES + (index % MAX_NEIGHBORS) + 1]!);
   }
 
   /** Runs the model once per row of candidates, returning scores as one flat array of CANDIDATES per row. */
-  private async runModel(textBefore: string, textAfter: string, rows: readonly (readonly number[])[]): Promise<Float32Array> {
+  private async runModel(
+    textBefore: string,
+    textAfter: string,
+    rows: readonly (readonly number[])[],
+  ): Promise<Float32Array> {
     const before = tokenize(textBefore, true).map((token) => this.tokenId(token));
     const left = before.length >= LEFT_WINDOW ? before.slice(-LEFT_WINDOW) : pad([START, ...before], LEFT_WINDOW);
-    const right = pad(tokenize(textAfter, false).slice(0, RIGHT_WINDOW).map((token) => this.tokenId(token)).reverse(), RIGHT_WINDOW);
+    const right = pad(
+      tokenize(textAfter, false)
+        .slice(0, RIGHT_WINDOW)
+        .map((token) => this.tokenId(token))
+        .reverse(),
+      RIGHT_WINDOW,
+    );
     const tiled = (values: readonly number[]) => rows.flatMap(() => values);
-    const tensor = (values: readonly number[], width: number) => new this.options.ort.Tensor("int64", BigInt64Array.from(values, BigInt), [rows.length, width]);
+    const tensor = (values: readonly number[], width: number) =>
+      new this.options.ort.Tensor("int64", BigInt64Array.from(values, BigInt), [rows.length, width]);
     const output = await this.options.session.run({
       left: tensor(tiled(left), LEFT_WINDOW),
       right: tensor(tiled(right), RIGHT_WINDOW),
-      candidates: tensor(rows.flatMap((row) => [...row, ...pad([], CANDIDATES - row.length)]), CANDIDATES),
+      candidates: tensor(
+        rows.flatMap((row) => [...row, ...pad([], CANDIDATES - row.length)]),
+        CANDIDATES,
+      ),
     });
     return output.scores!.data as Float32Array;
   }
@@ -220,6 +252,11 @@ export class WrongWordChecker implements WrongWordFinder, ContextScorer {
       .sort((first, second) => second.value - first.value);
     const best = ranked[0]!;
     if (best.value < this.settings.threshold) return null;
-    return { original: word, replacement: matchCase(word, best.word), confidence: 1 / (1 + Math.exp(-best.margin)), usedContext: true };
+    return {
+      original: word,
+      replacement: matchCase(word, best.word),
+      confidence: 1 / (1 + Math.exp(-best.margin)),
+      usedContext: true,
+    };
   }
 }
