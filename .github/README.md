@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://huggingface.co/spaces/paperweight/offline-page"><b>Open the app</b></a> ·
+  <a href="https://offlinepage.app"><b>Open the app</b></a> ·
   <a href="https://huggingface.co/paperweight/tinyfix">tinyfix</a> ·
   <a href="https://huggingface.co/paperweight/tinynext">tinynext</a>
 </p>

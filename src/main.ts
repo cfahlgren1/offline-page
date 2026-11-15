@@ -124,7 +124,9 @@ const activeModels = (): Models | null => (settings.isModelOn("tinyfix") ? model
 const activeTinyNext = (): TinyNextClient | null => (settings.isModelOn("tinynext") ? tinynext : null);
 
 /** New pages start with the cursor in the title; existing ones open at the top. */
-function open(doc: DocRecord, source: OpenContent = { type: "json", content: doc.content }, focus: "start" | "end" = "start"): void {
+function open(saved: DocRecord, opened?: OpenContent, focus: "start" | "end" = "start"): void {
+  const doc = withoutEmptyLastHeading(saved);
+  const source: OpenContent = opened ?? { type: "json", content: doc.content };
   saveNow();
   popover.hide();
   editor?.destroy();
@@ -167,6 +169,17 @@ function openMostRecent(): void {
   const doc = next ? store.load(next.id) : null;
   if (doc) open(doc);
   else openNew();
+}
+
+/**
+ * Pages saved before the editor's last line became a paragraph end with an empty heading. It's dropped on opening, and
+ * the editor adds the paragraph in its place.
+ */
+function withoutEmptyLastHeading(doc: DocRecord): DocRecord {
+  const blocks = doc.content.content ?? [];
+  const last = blocks.at(-1);
+  if (blocks.length < 2 || last?.type !== "heading" || last.content?.length) return doc;
+  return { ...doc, content: { ...doc.content, content: blocks.slice(0, -1) } };
 }
 
 function openInitial(): void {

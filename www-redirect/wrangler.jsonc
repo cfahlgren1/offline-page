@@ -1,0 +1,7 @@
+{
+  "name": "offline-page-www",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": false,
+  "routes": [{ "pattern": "www.offlinepage.app", "custom_domain": true }]
+}

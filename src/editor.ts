@@ -35,7 +35,10 @@ export function createEditor(setup: EditorSetup): Editor {
     autofocus: setup.focus,
     editorProps: { attributes: { class: "prose", spellcheck: "false", "aria-label": "Page" } },
     extensions: [
-      StarterKit.configure({ document: false, heading: { levels: [1, 2, 3] }, link: { openOnClick: false } }),
+      // The empty line the editor keeps at the end of a page is a paragraph. Left to itself it would copy the first
+      // block, which is the title. A page that ends in a heading gets no extra line, so Enter in a new page's title
+      // starts the first paragraph instead of skipping past one.
+      StarterKit.configure({ document: false, heading: { levels: [1, 2, 3] }, link: { openOnClick: false }, trailingNode: { node: "paragraph", notAfter: ["heading"] } }),
       TitledDocument,
       Placeholder.configure({
         placeholder: ({ pos }) => (pos === 0 ? "Untitled" : "Write, or press / for blocks"),
