@@ -56,7 +56,7 @@ const BRITISH_WORDS: ReadonlySet<string> = new Set(
 /** Everyday words newer than the word list, which would otherwise be "corrected" (emoji → meiji, todo → too). */
 const NEWER_WORDS: ReadonlySet<string> = new Set(
   (
-    "emoji todo selfie hashtag livestream chatbot vlog vlogger influencer fintech covid podcaster blogger unfollow " +
+    "https emoji todo selfie hashtag livestream chatbot vlog vlogger influencer fintech covid podcaster blogger unfollow " +
     "unfriend retweet screenshare webinar onboarding offboarding skincare smartwatch earbud airpod wifi bluetooth " +
     "async runtime frontend backend dataset username login logout signup checkout touchscreen spreadsheet " +
     "workflow timeline toolbar dropdown popup tooltip codebase repo config dev devops cybersecurity crypto " +

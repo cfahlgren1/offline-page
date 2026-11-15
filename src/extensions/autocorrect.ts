@@ -6,9 +6,10 @@ import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
 import type { Models } from "../models";
 import type { Correction } from "../tinyfix/fixer";
 
-const BOUNDARY = /^[\s.,!?;:]$/;
+// A word is finished by a space, by punctuation, or by a closing bracket or quote, as in "(teh)".
+const BOUNDARY = /^[\s.,!?;:)\]"”…]$/;
 const SENTENCE_END = /[.!?]/;
-const WORD_THEN_BOUNDARY = /([A-Za-z']+)[\s.,!?;:]?$/;
+const WORD_THEN_BOUNDARY = /([A-Za-z']+)[\s.,!?;:)\]"”…]?$/;
 const FINISHED_WORD = /[A-Za-z']+/g;
 
 /** How many more words the context check waits for, so it can read both sides of a word. */
@@ -114,8 +115,13 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
       typedAfter: string,
       milliseconds: number,
     ): void => {
+      // The check ran in the background, and the page may have been closed since.
+      if (view.isDestroyed) return;
       const to = from + correction.original.length;
       if (view.state.doc.textBetween(from, to) !== correction.original) return;
+      // Inline code is left exactly as typed, like a code block.
+      const code = view.state.schema.marks.code;
+      if (code && view.state.doc.rangeHasMark(from, to, code)) return;
       const fix: AppliedFix = {
         id: nextId++,
         kind: correction.usedContext ? "context" : "spelling",
@@ -132,6 +138,8 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
     const check = async (view: EditorView, blockStart: number, text: string, boundary: string): Promise<void> => {
       const models = options.getModels();
       if (!models) return;
+      // An odd number of backticks means the cursor is inside inline code that hasn't been closed yet.
+      if ((text.match(/`/g)?.length ?? 0) % 2 === 1) return;
 
       const typed = WORD_THEN_BOUNDARY.exec(text);
       if (typed) {

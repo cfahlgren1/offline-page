@@ -35,19 +35,42 @@ const INDEX_KEY = "offline.page/docs";
 const LAST_OPENED_KEY = "offline.page/last-opened";
 const docKey = (id: string) => `offline.page/doc/${id}`;
 
-function readJson<T>(key: string): T | null {
-  const raw = localStorage.getItem(key);
-  return raw ? (JSON.parse(raw) as T) : null;
+/**
+ * Reads a saved value. Storage can be blocked, and a value can be damaged or written by something else, so anything
+ * unreadable comes back as null instead of stopping the app.
+ */
+function readJson(key: string): unknown {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    console.error(`Couldn’t read ${key}`, error);
+    return null;
+  }
 }
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
+
+const isSummary = (value: unknown): value is DocSummary =>
+  isRecord(value) &&
+  typeof value.id === "string" &&
+  typeof value.title === "string" &&
+  typeof value.updatedAt === "number";
+
+const isDoc = (value: unknown): value is DocRecord =>
+  isSummary(value) && isRecord((value as { content?: unknown }).content);
 
 /** Documents live in this browser's localStorage. Nothing is sent anywhere. */
 export const store = {
   list(): DocSummary[] {
-    return (readJson<DocSummary[]>(INDEX_KEY) ?? []).sort((first, second) => second.updatedAt - first.updatedAt);
+    const saved = readJson(INDEX_KEY);
+    const summaries = Array.isArray(saved) ? saved.filter(isSummary) : [];
+    return summaries.sort((first, second) => second.updatedAt - first.updatedAt);
   },
 
   load(id: string): DocRecord | null {
-    return readJson<DocRecord>(docKey(id));
+    const saved = readJson(docKey(id));
+    return isDoc(saved) ? saved : null;
   },
 
   /** Throws when the browser refuses the write, for example when storage is full. */
@@ -70,11 +93,20 @@ export const store = {
   },
 
   lastOpened(): string | null {
-    return localStorage.getItem(LAST_OPENED_KEY);
+    try {
+      return localStorage.getItem(LAST_OPENED_KEY);
+    } catch {
+      return null;
+    }
   },
 
+  /** Only a convenience for the next visit, so a browser that refuses the write is ignored. */
   setLastOpened(id: string): void {
-    localStorage.setItem(LAST_OPENED_KEY, id);
+    try {
+      localStorage.setItem(LAST_OPENED_KEY, id);
+    } catch {
+      // Saving the page itself reports a storage problem to the user.
+    }
   },
 
   create(content: JSONContent, title: string): DocRecord {

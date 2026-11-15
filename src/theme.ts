@@ -30,7 +30,11 @@ export function setupTheme(button: HTMLButtonElement, onChosen: () => void): voi
   button.addEventListener("click", () => {
     const next: Theme = isDark() ? "light" : "dark";
     apply(next);
-    localStorage.setItem(THEME_KEY, next);
+    try {
+      localStorage.setItem(THEME_KEY, next);
+    } catch (error) {
+      console.error("Couldn’t remember the theme", error);
+    }
     onChosen();
   });
 }
