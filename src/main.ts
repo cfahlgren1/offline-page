@@ -1,7 +1,7 @@
 import type { Editor, JSONContent } from "@tiptap/core";
 import { MODELS, hubUrl, type ModelId } from "./brand";
 import { createEditor } from "./editor";
-import { revertFix, type AppliedFix } from "./extensions/autocorrect";
+import { revertFix } from "./extensions/autocorrect";
 import { suggestionsKey } from "./extensions/suggestions";
 import { FixPopover } from "./fixPopover";
 import type { Models } from "./models";
@@ -353,7 +353,6 @@ document.addEventListener("keydown", (event) => {
 const MODEL_IDS = Object.keys(MODELS) as ModelId[];
 type ModelState = "loading" | "ready" | "error";
 let modelState: ModelState = "loading";
-let loadMilliseconds = 0;
 let worksOffline = false;
 let loadError = "";
 
@@ -463,7 +462,6 @@ async function loadTinyNext(): Promise<TinyNextClient> {
  */
 async function startModels(offlineCache: Promise<void>): Promise<void> {
   await offlineCache;
-  const began = performance.now();
   try {
     // Loaded on demand, so the ONNX runtime isn't part of the script the first paint waits for.
     const { loadModels } = await import("./models");
@@ -471,7 +469,6 @@ async function startModels(offlineCache: Promise<void>): Promise<void> {
     models = loaded;
     tinynext = client;
     window.offlinePageDebug = { suggestionTimings: client.timings };
-    loadMilliseconds = Math.round(performance.now() - began);
     modelState = "ready";
   } catch (error) {
     modelState = "error";
