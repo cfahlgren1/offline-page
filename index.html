@@ -3,11 +3,30 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="description" content="A writing app with autocorrect and autocomplete that work in airplane mode." />
+    <meta name="description" content="A free Markdown writing app with autocorrect and autocomplete that run in your browser and keep working in airplane mode. No account, nothing you type leaves your device." />
+    <link rel="canonical" href="https://offlinepage.app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="offline.page" />
+    <meta property="og:url" content="https://offlinepage.app/" />
+    <meta property="og:title" content="offline.page: a writing app that works in airplane mode" />
+    <meta property="og:description" content="Autocorrect and autocomplete from two tiny models that run in your browser tab. No account, nothing you type leaves your device." />
+    <meta property="og:image" content="https://offlinepage.app/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="offline.page. Writes with you, even in airplane mode." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="offline.page: a writing app that works in airplane mode" />
+    <meta name="twitter:description" content="Autocorrect and autocomplete from two tiny models that run in your browser tab. No account, nothing you type leaves your device." />
+    <meta name="twitter:image" content="https://offlinepage.app/og.png" />
     <meta name="theme-color" content="#fbfbf9" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#111112" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <title>offline.page</title>
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>offline.page: a writing app with autocorrect that works offline</title>
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"WebApplication","name":"offline.page","url":"https://offlinepage.app/","description":"A Markdown writing app with autocorrect and autocomplete that run in your browser and keep working offline.","applicationCategory":"ProductivityApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript and WebAssembly","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"image":"https://offlinepage.app/og.png"}
+    </script>
     <!-- Sets the sidebar and theme before the first paint, so the page doesn't shift or flash while the app loads. -->
     <script>
       (function () {
@@ -18,6 +37,8 @@
           if (localStorage.getItem("offline.page/sidebar") === "closed") open = false;
           var theme = localStorage.getItem("offline.page/theme");
           if (theme === "light" || theme === "dark") root.dataset.theme = theme;
+          // Someone with saved pages gets their own page, so the built-in welcome page stays hidden.
+          if (localStorage.getItem("offline.page/docs")) root.dataset.returning = "";
         } catch (error) {}
         root.dataset.sidebar = open ? "open" : "closed";
       })();
@@ -84,13 +105,13 @@
       </header>
 
       <main class="mx-auto w-full max-w-[712px] flex-1 px-4 pt-6 pb-30 sm:pt-[96px]">
-        <div class="mb-[22px] flex min-h-[1.4em] items-center gap-2 text-[13px] tracking-[0.01em] text-faint">
+        <div class="mb-[22px] flex min-h-5 items-center gap-2 text-[13px] tracking-[0.01em] text-faint">
           <span id="meta"></span>
           <span id="save-chip" class="group inline-flex items-center gap-1.5 data-[error]:text-error" title="Saved on this device">
             <i class="size-1.5 flex-none rounded-full bg-ok group-data-[busy]:bg-faint group-data-[error]:bg-error"></i><span id="save-status" class="hidden group-data-[busy]:inline group-data-[error]:inline">Saved</span>
           </span>
         </div>
-        <div id="editor"></div>
+        <div id="editor"><!--welcome--></div>
       </main>
     </div>
 

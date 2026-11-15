@@ -1,11 +1,10 @@
-import serifFont from "@fontsource-variable/newsreader/files/newsreader-latin-opsz-normal.woff2?url";
 import type { Editor, JSONContent } from "@tiptap/core";
 import { MODELS, type ModelId } from "./brand";
 import { createEditor } from "./editor";
 import { revertFix, type AppliedFix } from "./extensions/autocorrect";
 import { suggestionsKey } from "./extensions/suggestions";
 import { FixPopover } from "./fixPopover";
-import { loadModels, type Models } from "./models";
+import type { Models } from "./models";
 import { settings } from "./settings";
 import { store, type DocRecord, type DocSummary } from "./store";
 import { CapitalUndos, type CapitalRules } from "./tinyfix/capitals";
@@ -129,6 +128,8 @@ function open(doc: DocRecord, source: OpenContent = { type: "json", content: doc
   saveNow();
   popover.hide();
   editor?.destroy();
+  // Clears the plain-HTML welcome page that index.html shows until the editor is ready.
+  ui.editorHost.replaceChildren();
   current = doc;
   store.setLastOpened(doc.id);
   editor = createEditor({
@@ -432,6 +433,8 @@ async function startModels(offlineCache: Promise<void>): Promise<void> {
   await offlineCache;
   const began = performance.now();
   try {
+    // Loaded on demand, so the ONNX runtime isn't part of the script the first paint waits for.
+    const { loadModels } = await import("./models");
     const [loaded, client] = await Promise.all([loadModels(), loadTinyNext()]);
     models = loaded;
     tinynext = client;
@@ -478,14 +481,15 @@ async function startOfflineCache(): Promise<void> {
   }
 }
 
-// The serif for systems without Iowan Old Style or Charter. It's bundled, so it works offline too.
-document.fonts.add(new FontFace("Newsreader", `url(${serifFont}) format("woff2")`, { weight: "200 800" }));
 applyTheme(readTheme());
 setSidebar(!isDrawer() && settings.isSidebarOpen());
 renderModelToggles();
 renderCapitalsToggle();
 renderStatus();
-openInitial();
+// In its own task, so starting the editor doesn't add to the time the script itself takes to run. On a first visit
+// index.html already shows the welcome page, so the editor waits until that has been drawn once.
+if ("returning" in document.documentElement.dataset) setTimeout(openInitial);
+else requestAnimationFrame(() => setTimeout(openInitial));
 // Animations start once the first frame is drawn, so the sidebar doesn't slide in on load.
 requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove("preload")));
 window.addEventListener("pagehide", saveNow);

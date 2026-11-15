@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 const SIZES = {
   banner: { width: 960, height: 400 },
   social: { width: 640, height: 320 },
+  // The link preview that offlinepage.app serves, at the 1200x630 size social sites expect.
+  og: { width: 600, height: 315 },
   tinyfix: { width: 960, height: 400 },
   tinynext: { width: 960, height: 400 },
 };

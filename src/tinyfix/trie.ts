@@ -14,6 +14,17 @@ export class WordTrie {
     words.forEach((word, index) => this.insert(word, index));
   }
 
+  /** Builds the same trie a few thousand words at a time, calling `pause` in between so a page stays responsive. */
+  static async inSteps(words: readonly string[], pause: () => Promise<void>, step = 8000): Promise<WordTrie> {
+    const trie = new WordTrie([]);
+    for (let start = 0; start < words.length; start += step) {
+      const end = Math.min(words.length, start + step);
+      for (let index = start; index < end; index++) trie.insert(words[index]!, index);
+      await pause();
+    }
+    return trie;
+  }
+
   private insert(word: string, index: number): void {
     let node = 0;
     for (let position = 0; position < word.length; position++) {

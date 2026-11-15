@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://offlinepage.app/sitemap.xml

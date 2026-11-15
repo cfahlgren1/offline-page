@@ -12,9 +12,12 @@ function listFiles(directory) {
   });
 }
 
+// Files for search engines, link previews and the host. The app never loads them, so they aren't saved for offline use.
+const NOT_FOR_OFFLINE = new Set(["_headers", "robots.txt", "sitemap.xml", "llms.txt", "og.png"]);
+
 const files = listFiles(dist)
   .map((path) => relative(dist, path))
-  .filter((path) => path !== "sw.js" && !path.endsWith(".DS_Store"))
+  .filter((path) => path !== "sw.js" && !path.endsWith(".DS_Store") && !NOT_FOR_OFFLINE.has(path))
   .sort();
 
 // The cache name changes whenever any file does, so a new deploy replaces the old cache in one step.
@@ -49,8 +52,18 @@ const MATCH = { ignoreSearch: true, ignoreVary: true };
  */
 function navigate(request) {
   return fetch(request)
-    .then((response) => (response.ok && !response.redirected ? response : caches.match("./index.html", MATCH).then((cached) => cached ?? response)))
-    .catch(() => caches.match("./index.html", MATCH));
+    .then((response) => (response.ok && !response.redirected ? response : cachedPage().then((cached) => cached ?? response)))
+    .catch(() => cachedPage());
+}
+
+/**
+ * The cached index.html. Cloudflare answers "index.html" with a redirect to "/", so the copy saved at install is marked
+ * as redirected, and a browser refuses that for a page load. Copying it into a new response clears the mark.
+ */
+function cachedPage() {
+  return caches
+    .match("./index.html", MATCH)
+    .then((cached) => (cached?.redirected ? new Response(cached.body, { status: cached.status, statusText: cached.statusText, headers: cached.headers }) : cached));
 }
 
 // Everything else is cache first: the built files have content hashes and the models are versioned by the cache name.

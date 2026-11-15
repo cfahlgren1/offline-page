@@ -41,6 +41,8 @@ export interface Correction {
 
 export interface FixerOptions {
   words: readonly WordEntry[];
+  /** A trie already built from `words`, in the same order. Built here when missing. */
+  trie?: WordTrie;
   scorer?: ContextScorer;
   weights?: Partial<FixerWeights>;
   maxCandidates?: number;
@@ -77,7 +79,7 @@ export class Fixer {
   constructor(options: FixerOptions) {
     this.words = options.words;
     this.words.forEach((entry) => this.known.add(entry.word));
-    this.trie = new WordTrie(this.words.map((entry) => entry.word));
+    this.trie = options.trie ?? new WordTrie(this.words.map((entry) => entry.word));
     this.scorer = options.scorer;
     this.weights = { ...DEFAULT_WEIGHTS, ...options.weights };
     this.maxCandidates = options.maxCandidates ?? 12;

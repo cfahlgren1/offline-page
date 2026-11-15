@@ -16,6 +16,7 @@
 const IMAGES = {
   banner:   { name: 'offline<span class="write page">.page</span>', line: "Autocorrect and autocomplete that work in airplane mode.", size: 88 },
   social:   { name: 'offline<span class="write page">.page</span>', line: "Writes with you, even in airplane mode.", size: 76 },
+  og:       { name: 'offline<span class="write page">.page</span>', line: "Writes with you, even in airplane mode.", size: 76 },
   tinyfix:  { name: 'tiny<span class="write fix">fix</span>', line: "Autocorrect that reads both sides of a word.", size: 104 },
   tinynext: { name: 'tiny<span class="caret"></span><span class="write next">next</span>', line: "Suggests the next few words. Tab to take them.", size: 104 },
 };
@@ -33,7 +34,7 @@ line.textContent = image.line;
 line.style.fontSize = `${Math.round(image.size * 0.22)}px`;
 
 // The wave field from the tinyfix image, shifted per image so each one is its own but they read as a family.
-const PHASE = { banner: 0, social: 1.7, tinyfix: 0, tinynext: 3.1 };
+const PHASE = { banner: 0, social: 1.7, og: 1.7, tinyfix: 0, tinynext: 3.1 };
 const waves = (px, py, phase) => {
   const a = Math.sin(px / 38 + Math.sin(py / 60 + phase) * 2.2 + phase);
   const b = Math.sin(py / 26 - px / 90 + Math.cos(px / 140 - phase) * 1.5);
