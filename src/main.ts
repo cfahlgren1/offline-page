@@ -2,12 +2,13 @@ import serifFont from "@fontsource-variable/newsreader/files/newsreader-latin-op
 import type { Editor, JSONContent } from "@tiptap/core";
 import { MODELS, type ModelId } from "./brand";
 import { createEditor } from "./editor";
-import { revertFix } from "./extensions/autocorrect";
+import { revertFix, type AppliedFix } from "./extensions/autocorrect";
 import { suggestionsKey } from "./extensions/suggestions";
 import { FixPopover } from "./fixPopover";
 import { loadModels, type Models } from "./models";
 import { settings } from "./settings";
 import { store, type DocRecord, type DocSummary } from "./store";
+import { CapitalUndos, type CapitalRules } from "./tinyfix/capitals";
 import { TinyNextClient } from "./tinynext/client";
 import "./styles.css";
 import { WELCOME_MARKDOWN, WELCOME_TITLE } from "./welcome";
@@ -40,6 +41,8 @@ const ui = {
   editorHost: element("editor"),
   modelsStatus: element("models-status"),
   modelStatus: element("model-status"),
+  capitalsToggle: element<HTMLButtonElement>("toggle-capitals"),
+  capitalsSpine: element("spine-capitals"),
 };
 
 let models: Models | null = null;
@@ -48,9 +51,28 @@ let editor: Editor | null = null;
 let current: DocRecord | null = null;
 let saveTimer: number | undefined;
 
+/** Capitals undone on each page this session, by page id. */
+const capitalUndos = new Map<string, CapitalUndos>();
+
+function capitalUndosFor(id: string): CapitalUndos {
+  const existing = capitalUndos.get(id);
+  if (existing) return existing;
+  const created = new CapitalUndos();
+  capitalUndos.set(id, created);
+  return created;
+}
+
+const activeCapitals = (): CapitalRules | null => (settings.isCapitalsOn() && current ? capitalUndosFor(current.id).rules() : null);
+
+/** Remembers an undone capital on the current page. Other fixes are remembered by tinyfix. */
+function noteCapitalUndone(fix: AppliedFix): void {
+  if (current && (fix.kind === "sentence-start" || fix.kind === "calendar")) capitalUndosFor(current.id).record(fix.kind, fix.original);
+}
+
 const popover = new FixPopover((fix) => {
   if (!editor) return;
   revertFix(editor.view, models, fix.id);
+  noteCapitalUndone(fix);
   editor.commands.focus();
 });
 
@@ -117,6 +139,8 @@ function open(doc: DocRecord, source: OpenContent = { type: "json", content: doc
     getModels: activeModels,
     getTinyNext: activeTinyNext,
     onFixClick: (fix, anchor) => popover.show(fix, anchor),
+    getCapitals: activeCapitals,
+    onCapitalUndone: noteCapitalUndone,
     onUpdate: () => {
       renderMeta();
       setSaveStatus("Saving…", "busy");
@@ -372,6 +396,18 @@ for (const id of MODEL_IDS) {
   });
 }
 
+function renderCapitalsToggle(): void {
+  const on = settings.isCapitalsOn();
+  ui.capitalsToggle.setAttribute("aria-checked", String(on));
+  ui.capitalsToggle.title = `Capitals at the start of sentences and on days and months. Needs no model. Click to turn it ${on ? "off" : "on"}.`;
+  ui.capitalsSpine.toggleAttribute("data-on", on);
+}
+
+ui.capitalsToggle.addEventListener("click", () => {
+  settings.setCapitalsOn(!settings.isCapitalsOn());
+  renderCapitalsToggle();
+});
+
 /** Exposed for latency checks: milliseconds per tinynext suggestion, measured in its worker. */
 declare global {
   interface Window {
@@ -447,6 +483,7 @@ document.fonts.add(new FontFace("Newsreader", `url(${serifFont}) format("woff2")
 applyTheme(readTheme());
 setSidebar(!isDrawer() && settings.isSidebarOpen());
 renderModelToggles();
+renderCapitalsToggle();
 renderStatus();
 openInitial();
 // Animations start once the first frame is drawn, so the sidebar doesn't slide in on load.

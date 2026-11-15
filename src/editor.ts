@@ -7,6 +7,7 @@ import { Autocorrect, type AppliedFix } from "./extensions/autocorrect";
 import { SlashMenu } from "./extensions/slashMenu";
 import { Suggestions } from "./extensions/suggestions";
 import type { Models } from "./models";
+import type { CapitalRules } from "./tinyfix/capitals";
 import type { TinyNextClient } from "./tinynext/client";
 
 /** Every page starts with a heading, which is its title. */
@@ -21,6 +22,8 @@ export interface EditorSetup {
   getModels: () => Models | null;
   getTinyNext: () => TinyNextClient | null;
   onFixClick: (fix: AppliedFix, element: HTMLElement) => void;
+  getCapitals: () => CapitalRules | null;
+  onCapitalUndone: (fix: AppliedFix) => void;
   onUpdate: (editor: Editor) => void;
 }
 
@@ -38,7 +41,12 @@ export function createEditor(setup: EditorSetup): Editor {
         placeholder: ({ pos }) => (pos === 0 ? "Untitled" : "Write, or press / for blocks"),
       }),
       Markdown,
-      Autocorrect.configure({ getModels: setup.getModels, onFixClick: setup.onFixClick }),
+      Autocorrect.configure({
+        getModels: setup.getModels,
+        onFixClick: setup.onFixClick,
+        getCapitals: setup.getCapitals,
+        onCapitalUndone: setup.onCapitalUndone,
+      }),
       Suggestions.configure({ getTinyNext: setup.getTinyNext }),
       SlashMenu,
     ],

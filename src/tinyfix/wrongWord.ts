@@ -22,10 +22,12 @@ const MAX_KNOWN_MIXUP_COST = 1.5;
 const KNOWN_MIXUP_BONUS = 1;
 /** For a word with known mix-ups, any other nearby word needs to clear a higher bar: "your" is rarely meant as "you". */
 const OTHER_WORD_PENALTY = 1;
-/** With nothing to its left the model is less sure: "Buy one, get one free" is not "By one". */
-const SENTENCE_START_PENALTY = 1;
+/** A word that only differs by an ending ("examples" and "example") needs to clear a higher bar, unless it's a known mix-up. */
+const INFLECTION_PENALTY = 1;
+const INFLECTION_ENDINGS = new Set(["", "s", "es", "d", "ed", "ing", "r", "er", "ly"]);
+const MIN_STEM = 3;
 
-const TOKEN = /[A-Za-z]+(?:'[A-Za-z]+)?|\d+(?:[.,]\d+)*|[^\s\w]/g;
+const TOKEN = /[A-Za-z]+(?:'[A-Za-z]+)?|\d+(?:[.,]\d+)*|\n|[^\s\w]/g;
 const SENTENCE_OPENERS = new Set([".", "!", "?", ":", '"']);
 const WORD = /^[a-z]+(?:'[a-z]+)?$/;
 const LISTED_WORD = /^[A-Za-z]+(?:'[A-Za-z]+)?$/;
@@ -51,8 +53,8 @@ export interface WrongWordSettings {
 export const CAREFUL_WRONG_WORD: WrongWordSettings = { threshold: 5, costWeight: 0.5 };
 
 /**
- * On the lab bench's test sets this fixes about 40% of wrong words and wrongly changes about 1 correct word in 1,800,
- * the same as the model before it. A threshold of 2.5 fixes about 3 points more and changes about 1 in 1,400.
+ * On the lab bench's test sets this fixes about 43% of wrong words and wrongly changes about 1 correct word in 1,750,
+ * about the same as the model before it. A threshold of 2.75 fixes about 1 point more and changes about 1 in 1,550.
  */
 export const EAGER_WRONG_WORD: WrongWordSettings = { threshold: 3, costWeight: 1.5 };
 
@@ -72,10 +74,27 @@ export interface NearbyWord {
 
 const pad = (ids: readonly number[], length: number): number[] => [...new Array<number>(length - ids.length).fill(PAD), ...ids];
 
-/** Lowercases words, except capitalized words mid-sentence, which become a single name token. */
+/** True for pairs like "services" and "service" or "continued" and "continues". */
+export function differsOnlyInEnding(first: string, second: string): boolean {
+  let shared = 0;
+  while (shared < Math.min(first.length, second.length) && first[shared] === second[shared]) shared++;
+  for (let stem = shared; stem >= MIN_STEM; stem--) {
+    if (INFLECTION_ENDINGS.has(first.slice(stem)) && INFLECTION_ENDINGS.has(second.slice(stem))) return true;
+  }
+  return false;
+}
+
+/**
+ * Lowercases words, except capitalized words mid-sentence, which become a single name token. A line break ends a
+ * sentence, so the end of the paragraph before reads like the sentence before ("Notes" then "Their is..." isn't one run).
+ */
 function tokenize(text: string, startsSentence: boolean): string[] {
   const tokens: string[] = [];
   for (const raw of text.replaceAll("’", "'").match(TOKEN) ?? []) {
+    if (raw === "\n") {
+      if (tokens.length > 0 && !SENTENCE_OPENERS.has(tokens.at(-1)!)) tokens.push(".");
+      continue;
+    }
     const previous = tokens.at(-1);
     const atSentenceStart = previous === undefined ? startsSentence : SENTENCE_OPENERS.has(previous);
     const isPronoun = raw === "I" || raw.startsWith("I'");
@@ -181,15 +200,12 @@ export class WrongWordChecker implements WrongWordFinder, ContextScorer {
     return this.hasKnownMixups(word, textBefore) ? "knownMixups" : null;
   }
 
-  private value(item: NearbyWord, typedHasMixups: boolean): number {
+  private value(item: NearbyWord, typed: string, typedHasMixups: boolean): number {
     const value = item.margin - this.settings.costWeight * item.cost;
     if (item.isKnownMixup) return value + KNOWN_MIXUP_BONUS;
-    return typedHasMixups ? value - OTHER_WORD_PENALTY : value;
-  }
-
-  /** How far a nearby word's value must clear the threshold, given where the typed word is. */
-  private bar(textBefore: string): number {
-    return this.settings.threshold + (isSentenceStart(textBefore) ? SENTENCE_START_PENALTY : 0);
+    let penalty = typedHasMixups ? OTHER_WORD_PENALTY : 0;
+    if (differsOnlyInEnding(typed, item.word)) penalty += INFLECTION_PENALTY;
+    return value - penalty;
   }
 
   /** Returns a fix when a nearby word fits the sentence clearly better than the one typed. */
@@ -200,10 +216,10 @@ export class WrongWordChecker implements WrongWordFinder, ContextScorer {
     if (!nearby) return null;
     const typedHasMixups = nearby.some((item) => item.isKnownMixup);
     const ranked = nearby
-      .map((item) => ({ ...item, value: this.value(item, typedHasMixups) }))
+      .map((item) => ({ ...item, value: this.value(item, word.toLowerCase(), typedHasMixups) }))
       .sort((first, second) => second.value - first.value);
     const best = ranked[0]!;
-    if (best.value < this.bar(textBefore)) return null;
+    if (best.value < this.settings.threshold) return null;
     return { original: word, replacement: matchCase(word, best.word), confidence: 1 / (1 + Math.exp(-best.margin)), usedContext: true };
   }
 }

@@ -4,7 +4,9 @@ import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Plugin, PluginKey, type EditorState } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
 import type { Models } from "../models";
+import type { CapitalReason, CapitalRules } from "../tinyfix/capitals";
 import type { Correction } from "../tinyfix/fixer";
+import { findCapitalAt } from "./capitalsContext";
 
 const BOUNDARY = /^[\s.,!?;:]$/;
 const SENTENCE_END = /[.!?]/;
@@ -15,7 +17,7 @@ const FINISHED_WORD = /[A-Za-z']+/g;
 const WORDS_TO_WAIT_FOR = 2;
 const CONTEXT_CHECK_CHARACTERS = 400;
 
-export type FixKind = "context" | "spelling";
+export type FixKind = "context" | "spelling" | CapitalReason;
 
 export interface AppliedFix {
   id: number;
@@ -44,11 +46,16 @@ interface PluginState {
 export interface AutocorrectOptions {
   getModels: () => Models | null;
   onFixClick: (fix: AppliedFix, element: HTMLElement) => void;
+  /** Which capitals to add, or null while capitals are switched off. They need no model. */
+  getCapitals: () => CapitalRules | null;
+  onCapitalUndone: (fix: AppliedFix) => void;
 }
 
 export const autocorrectKey = new PluginKey<PluginState>("autocorrect");
 
 const fixSpec = (decoration: Decoration) => (decoration.spec as { fix: AppliedFix }).fix;
+
+export const isCapitalFix = (fix: AppliedFix): boolean => fix.kind === "sentence-start" || fix.kind === "calendar";
 
 /** Word positions worth checking now, nearest the cursor last. */
 function wordsDueForContextCheck(wordCount: number, isSentenceEnd: boolean): number[] {
@@ -63,6 +70,19 @@ function wordsDueForContextCheck(wordCount: number, isSentenceEnd: boolean): num
 /** Text of a textblock up to an offset. Each hard break counts as one character, so string indexes match document positions. */
 const blockText = (block: ProseMirrorNode, end: number) => block.textBetween(0, end, undefined, "\n");
 
+const PREVIOUS_PARAGRAPH_CHARACTERS = 200;
+
+/** The end of the paragraph before the one at `blockStart`, so the wrong-word check reads a paragraph's first words in context. */
+function previousParagraph(doc: ProseMirrorNode, blockStart: number): string {
+  if (blockStart > doc.content.size) return "";
+  const $start = doc.resolve(blockStart);
+  const index = $start.depth > 0 ? $start.index($start.depth - 1) : 0;
+  if (index === 0) return "";
+  const previous = $start.node($start.depth - 1).child(index - 1);
+  if (!previous.isTextblock || previous.type.spec.code) return "";
+  return blockText(previous, previous.content.size).slice(-PREVIOUS_PARAGRAPH_CHARACTERS) + "\n";
+}
+
 export function findFix(state: EditorState, id: number): FixPosition | null {
   const decorations = autocorrectKey.getState(state)?.decorations;
   const found = decorations?.find(undefined, undefined, (spec) => (spec as { fix: AppliedFix }).fix.id === id)[0];
@@ -75,7 +95,7 @@ export function revertFix(view: EditorView, models: Models | null, id: number): 
   if (!found) return;
   const meta: Meta = { type: "remove", id };
   view.dispatch(closeHistory(view.state.tr.insertText(found.fix.original, found.from, found.to).setMeta(autocorrectKey, meta)));
-  models?.fixer.rememberUndo(found.fix.original);
+  if (!isCapitalFix(found.fix)) models?.fixer.rememberUndo(found.fix.original);
 }
 
 /** Fixes each word as you finish it, and real words in the wrong place about two words later. Each fix is its own undo step. */
@@ -84,7 +104,7 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
   priority: 1000,
 
   addOptions() {
-    return { getModels: () => null, onFixClick: () => undefined };
+    return { getModels: () => null, onFixClick: () => undefined, getCapitals: () => null, onCapitalUndone: () => undefined };
   },
 
   addProseMirrorPlugins() {
@@ -92,12 +112,12 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
     let nextId = 1;
     let queue: Promise<unknown> = Promise.resolve();
 
-    const applyFix = (view: EditorView, from: number, correction: Correction, typedAfter: string, milliseconds: number): void => {
+    const applyFix = (view: EditorView, from: number, correction: Correction, typedAfter: string, milliseconds: number, kind?: FixKind): void => {
       const to = from + correction.original.length;
       if (view.state.doc.textBetween(from, to) !== correction.original) return;
       const fix: AppliedFix = {
         id: nextId++,
-        kind: correction.usedContext ? "context" : "spelling",
+        kind: kind ?? (correction.usedContext ? "context" : "spelling"),
         original: correction.original,
         replacement: correction.replacement,
         typedAfter: typedAfter.trim(),
@@ -110,19 +130,27 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
     /** Checks the words before `text`'s end. `blockStart` is the document position of the text's first character. */
     const check = async (view: EditorView, blockStart: number, text: string, boundary: string): Promise<void> => {
       const models = options.getModels();
-      if (!models) return;
 
       const typed = WORD_THEN_BOUNDARY.exec(text);
       if (typed) {
         const word = typed[1]!;
         const start = typed.index;
+        const capitals = options.getCapitals();
+        const capitalFor = (candidate: string) => capitals && findCapitalAt(view.state.doc, blockStart + start, candidate, boundary, capitals);
+        const capitalBegan = performance.now();
+        const capital = capitalFor(word);
+        const capitalMilliseconds = performance.now() - capitalBegan;
         const began = performance.now();
-        const correction = await models.fixer.correct(text.slice(0, start), word);
+        const correction = models ? await models.fixer.correct(text.slice(0, start), word) : null;
         if (correction) {
-          applyFix(view, blockStart + start, correction, "", performance.now() - began);
+          // A misspelled sentence start gets one fix, "teh" → "The", so a single undo puts back what was typed.
+          const replacement = capitalFor(correction.replacement)?.replacement ?? correction.replacement;
+          applyFix(view, blockStart + start, { ...correction, replacement }, "", performance.now() - began);
           return;
         }
+        if (capital) applyFix(view, blockStart + start, { original: word, replacement: capital.replacement, confidence: 1 }, "", capitalMilliseconds, capital.reason);
       }
+      if (!models) return;
 
       const offset = Math.max(0, text.length - CONTEXT_CHECK_CHARACTERS);
       const words = [...text.slice(offset).matchAll(FINISHED_WORD)];
@@ -131,7 +159,7 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
         const start = offset + words[index]!.index;
         if (models.fixer.wasUndone(word)) continue;
         const began = performance.now();
-        const correction = await models.wrongWord.check(text.slice(0, start), word, text.slice(start + word.length));
+        const correction = await models.wrongWord.check(previousParagraph(view.state.doc, blockStart) + text.slice(0, start), word, text.slice(start + word.length));
         if (!correction) continue;
         applyFix(view, blockStart + start, correction, text.slice(start + word.length), performance.now() - began);
         return;
@@ -197,7 +225,8 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
             if (!last || !view.state.selection.empty || view.state.selection.head !== last.cursor) return false;
             const found = findFix(view.state, last.id);
             if (!found || !undo(view.state, view.dispatch)) return false;
-            options.getModels()?.fixer.rememberUndo(found.fix.original);
+            if (isCapitalFix(found.fix)) options.onCapitalUndone(found.fix);
+            else options.getModels()?.fixer.rememberUndo(found.fix.original);
             return true;
           },
 

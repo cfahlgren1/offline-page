@@ -207,7 +207,7 @@
     @apply text-line;
   }
 
-  /* A fixed word: faint underline, purple when the model fixed it from context, blue for spelling. */
+  /* A fixed word: faint underline, purple when the model fixed it from context, blue for spelling and capitals. */
   .fix {
     @apply cursor-pointer underline decoration-2 underline-offset-[5px];
   }
@@ -216,7 +216,9 @@
     text-decoration-color: var(--context-line);
   }
 
-  .fix-spelling {
+  .fix-spelling,
+  .fix-sentence-start,
+  .fix-calendar {
     text-decoration-color: var(--spelling-line);
   }
 
@@ -340,7 +342,8 @@
     @apply text-context;
   }
 
-  #toggle-tinynext[aria-checked="true"] .model-n {
+  #toggle-tinynext[aria-checked="true"] .model-n,
+  #toggle-capitals[aria-checked="true"] .model-n {
     @apply text-side-faint;
   }
 

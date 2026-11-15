@@ -1,10 +1,22 @@
 import { MODELS } from "./brand";
 import type { AppliedFix, FixKind } from "./extensions/autocorrect";
 
-const KIND_LABEL = { context: "Fixed from context", spelling: "Fixed spelling" } as const satisfies Record<FixKind, string>;
-const SOURCE_LABEL = { context: MODELS.tinyfix.name, spelling: `${MODELS.tinyfix.name} dictionary` } as const satisfies Record<FixKind, string>;
+const KIND_LABEL = {
+  context: "Fixed from context",
+  spelling: "Fixed spelling",
+  "sentence-start": "Capitalized",
+  calendar: "Capitalized",
+} as const satisfies Record<FixKind, string>;
+const SOURCE_LABEL = {
+  context: MODELS.tinyfix.name,
+  spelling: `${MODELS.tinyfix.name} dictionary`,
+  "sentence-start": "capitals",
+  calendar: "capitals",
+} as const satisfies Record<FixKind, string>;
 
 function explain(fix: AppliedFix): string {
+  if (fix.kind === "sentence-start") return `“${fix.replacement}” starts a sentence. Undo twice on a page and sentence starts are left as you type them.`;
+  if (fix.kind === "calendar") return "Days of the week and months take a capital.";
   if (fix.kind === "spelling") return `“${fix.original}” isn’t in the dictionary. “${fix.replacement}” is the closest common word.`;
   if (fix.typedAfter) return `Fixed when you typed “${fix.typedAfter}”. The words around it fit “${fix.replacement}” better.`;
   return `The words around it fit “${fix.replacement}” better.`;
@@ -30,7 +42,8 @@ export class FixPopover {
   }
 
   show(fix: AppliedFix, anchor: HTMLElement): void {
-    this.element.dataset.kind = fix.kind;
+    // Capitals share the spelling fix's blue.
+    this.element.dataset.kind = fix.kind === "context" ? "context" : "spelling";
     this.element.innerHTML = `
       <div class="flex items-center gap-[7px] text-[11.5px] font-semibold tracking-[0.04em] text-context uppercase group-data-[kind=spelling]:text-spelling">
         <i class="size-[7px] rounded-full bg-context group-data-[kind=spelling]:bg-spelling"></i>
