@@ -50,12 +50,14 @@ function missedKeyCost(intended: string, position: number): number {
   return intended[position] === intended[position - 1] ? COST.doubledKey : COST.missedKey;
 }
 
+/** A slip on a word's first letter is less likely, so it costs more. */
+const start = (position: number) => (position === 0 ? COST.firstLetterPenalty : 0);
+
 /** Weighted edit distance: a lower cost means the typo is a more believable slip of the fingers. */
 export function typoCost(typed: string, intended: string): number {
   const rows = typed.length + 1;
   const columns = intended.length + 1;
   const table: number[][] = Array.from({ length: rows }, () => new Array<number>(columns).fill(0));
-  const start = (position: number) => (position === 0 ? COST.firstLetterPenalty : 0);
 
   for (let row = 1; row < rows; row++) table[row]![0] = table[row - 1]![0]! + extraKeyCost(typed, row - 1) + start(row - 1);
   for (let column = 1; column < columns; column++) table[0]![column] = table[0]![column - 1]! + missedKeyCost(intended, column - 1) + start(column - 1);

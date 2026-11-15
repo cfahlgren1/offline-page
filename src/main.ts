@@ -231,11 +231,11 @@ function renderPages(): void {
   ui.pages.replaceChildren(...store.list().map(pageItem));
 }
 
-function setSidebar(open: boolean, remember = false): void {
-  if (!open) closeModelInfo();
+function setSidebar(isOpen: boolean, remember = false): void {
+  if (!isOpen) closeModelInfo();
   closeMenu();
-  document.documentElement.dataset.sidebar = open ? "open" : "closed";
-  if (remember && !isDrawer()) settings.setSidebarOpen(open);
+  document.documentElement.dataset.sidebar = isOpen ? "open" : "closed";
+  if (remember && !isDrawer()) settings.setSidebarOpen(isOpen);
 }
 
 const toggleSidebar = () => setSidebar(document.documentElement.dataset.sidebar !== "open", true);

@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build && node scripts/write-service-worker.mjs",
+    "build": "npm run check && vite build && node scripts/write-service-worker.mjs",
     "preview": "vite preview",
-    "check": "tsc --noEmit",
+    "check": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
+    "lint": "oxlint",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "brand": "node brand/render.mjs",
     "deploy": "bash scripts/deploy-space.sh",
     "deploy:cloudflare": "bash scripts/deploy-cloudflare.sh"
@@ -25,6 +28,9 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.5",
+    "@types/node": "^26.6.6",
+    "oxfmt": "^0.78.0",
+    "oxlint": "^1.93.0",
     "playwright-core": "^1.65.0",
     "tailwindcss": "^4.3.5",
     "typescript": "~5.9",

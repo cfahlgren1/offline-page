@@ -45,7 +45,7 @@ export function createEditor(setup: EditorSetup): Editor {
       Suggestions.configure({ getTinyNext: setup.getTinyNext }),
       SlashMenu,
     ],
-    onUpdate: ({ editor }) => setup.onUpdate(editor),
+    onUpdate: ({ editor: updated }) => setup.onUpdate(updated),
   });
   // Tiptap applies autofocus on a timer, so a key pressed right after opening a page would be lost. The selection is
   // already where autofocus puts it, so focusing now is enough.
