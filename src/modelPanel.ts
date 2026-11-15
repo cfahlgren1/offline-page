@@ -16,6 +16,8 @@ export interface ModelPanel {
 
 const MODEL_IDS = Object.keys(MODELS) as ModelId[];
 const INFO_CARD_MARGIN = 12;
+const HOVER_OPEN_MILLISECONDS = 350;
+const HOVER_CLOSE_MILLISECONDS = 200;
 
 function footer(status: ModelStatus): string {
   if (status.state === "error") return "The models couldn’t load. Writing and saving still work.";
@@ -58,12 +60,18 @@ export function setupModelPanel(onToggle: (id: ModelId, on: boolean) => void): M
     <p class="info-text text-faint">${footer(status)}</p>`;
   }
 
+  /** A card opened by a click stays until it's dismissed; one opened by hovering closes when the pointer leaves. */
+  let pinned = false;
+  let hoverTimer: number | undefined;
+
   const closeOnOutsidePress = (event: PointerEvent): void => {
     const target = event.target as Node;
     if (!card.contains(target) && !MODEL_IDS.some((id) => infoButton(id).contains(target))) closeInfo();
   };
 
   function closeInfo(): void {
+    window.clearTimeout(hoverTimer);
+    pinned = false;
     if (!openInfo) return;
     infoButton(openInfo).setAttribute("aria-expanded", "false");
     openInfo = null;
@@ -71,16 +79,22 @@ export function setupModelPanel(onToggle: (id: ModelId, on: boolean) => void): M
     document.removeEventListener("pointerdown", closeOnOutsidePress);
   }
 
-  /** Opens the card above the model's row, since the rows sit at the bottom of the sidebar, and keeps it on screen. */
+  /** The short wait lets the pointer cross the gap between a row and its card without the card closing. */
+  function closeSoonUnlessPinned(): void {
+    window.clearTimeout(hoverTimer);
+    if (!pinned) hoverTimer = window.setTimeout(closeInfo, HOVER_CLOSE_MILLISECONDS);
+  }
+
+  /** Opens the card above both rows, so it never covers either switch, and keeps it on screen. */
   function showInfo(id: ModelId): void {
     closeInfo();
     openInfo = id;
     renderInfo(id);
     card.hidden = false;
-    const box = infoButton(id).getBoundingClientRect();
+    const box = element(`model-${MODEL_IDS[0]}`).getBoundingClientRect();
     const furthestLeft = window.innerWidth - card.offsetWidth - INFO_CARD_MARGIN;
     card.style.bottom = `${window.innerHeight - box.top + 6}px`;
-    card.style.left = `${Math.max(INFO_CARD_MARGIN, Math.min(box.right - card.offsetWidth, furthestLeft))}px`;
+    card.style.left = `${Math.max(INFO_CARD_MARGIN, Math.min(box.left - 16, furthestLeft))}px`;
     infoButton(id).setAttribute("aria-expanded", "true");
     document.addEventListener("pointerdown", closeOnOutsidePress);
   }
@@ -101,8 +115,23 @@ export function setupModelPanel(onToggle: (id: ModelId, on: boolean) => void): M
       renderToggles();
       onToggle(id, on);
     });
-    infoButton(id).addEventListener("click", () => (openInfo === id ? closeInfo() : showInfo(id)));
+    infoButton(id).addEventListener("click", () => {
+      // A click on a card that hovering opened keeps it; a second click closes it.
+      if (openInfo === id && pinned) return closeInfo();
+      showInfo(id);
+      pinned = true;
+    });
+    // With a mouse, resting on a row shows its card, and moving off the row and the card puts it away.
+    const row = element(`model-${id}`);
+    row.addEventListener("pointerenter", (event) => {
+      if (event.pointerType !== "mouse" || pinned) return;
+      window.clearTimeout(hoverTimer);
+      hoverTimer = window.setTimeout(() => showInfo(id), HOVER_OPEN_MILLISECONDS);
+    });
+    row.addEventListener("pointerleave", closeSoonUnlessPinned);
   }
+  card.addEventListener("pointerenter", () => window.clearTimeout(hoverTimer));
+  card.addEventListener("pointerleave", closeSoonUnlessPinned);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeInfo();
   });

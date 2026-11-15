@@ -405,17 +405,10 @@
   }
 
   .model {
-    @apply flex min-h-8 w-full items-center gap-2;
+    @apply flex min-h-7 w-full items-baseline gap-2;
   }
 
-  .model-n {
-    @apply w-[18px] flex-none font-sans text-[11px] font-medium text-side-faint;
-  }
-
-  #model-tinyfix[data-on] .model-n {
-    @apply text-context;
-  }
-
+  /* The name opens the model's card. */
   .model-name {
     @apply flex-none font-sans text-[13px] font-[650] tracking-[-0.01em];
   }
@@ -424,72 +417,44 @@
     @apply font-serif text-[1.1em] font-medium;
   }
 
-  .model:not([data-on]) .model-name {
-    @apply opacity-50;
+  /* The word at the end of the row is the switch: ON or OFF, and a click flips it. */
+  .model-state {
+    @apply -my-1 -mr-1.5 flex-none rounded-md px-1.5 py-1 font-sans text-[10px] font-semibold tracking-[0.12em] text-side-sub hover:bg-(--side-hover) hover:text-side-ink;
   }
 
-  /* The info button is faint until its row is pointed at, so the two rows read as names first. */
-  .model-info {
-    @apply -mr-1 size-6 text-side-faint opacity-60;
+  .model-state::after {
+    content: "ON";
   }
 
-  .model-info svg {
-    @apply size-[13px];
+  .model-state[aria-checked="false"]::after {
+    content: "OFF";
   }
 
-  .model:hover .model-info,
-  .model-info:focus-visible,
-  .model-info[aria-expanded="true"] {
-    @apply opacity-100;
-  }
-
-  /*
-   * A small on/off switch: a track with a knob that slides across. Its colors are mixed from the sidebar's own, so
-   * "on" is a soft mid-tone in both themes instead of the strongest color on the panel. The padding keeps it easy
-   * to hit.
-   */
-  .switch {
-    @apply -my-1.5 -mr-1.5 flex-none rounded-full p-1.5;
-  }
-
-  .switch i {
-    @apply relative block h-[14px] w-6 rounded-full transition-colors duration-150;
-    background: var(--leader);
-  }
-
-  .switch i::after {
-    @apply absolute top-0.5 left-0.5 size-2.5 rounded-full bg-side transition-transform duration-150 content-[''];
-  }
-
-  .switch[aria-checked="true"] i {
-    background: color-mix(in srgb, var(--side-ink) 50%, var(--side));
-  }
-
-  .switch[aria-checked="true"] i::after {
-    @apply translate-x-2.5;
+  /* A model that's off fades back, so the two states differ by more than one word. */
+  .model:not([data-on]) > * {
+    @apply opacity-45;
   }
 
   /* Fingers need bigger targets than a mouse pointer does. */
   @media (pointer: coarse) {
     .model {
-      @apply min-h-11;
+      @apply min-h-11 items-center;
+    }
+
+    .model-name {
+      @apply py-2.5;
+    }
+
+    .model-state {
+      @apply -my-2 -mr-2.5 min-w-11 px-2.5 py-3 text-[11px];
     }
 
     .side-icon {
       @apply size-10;
     }
 
-    /* No hover on a touch screen, so the info button is always fully visible there. */
-    .model-info {
-      @apply opacity-100;
-    }
-
     .new-page {
       @apply inline-flex min-h-11 items-center;
-    }
-
-    .switch {
-      @apply -my-2.5 -mr-2.5 p-2.5;
     }
   }
 
