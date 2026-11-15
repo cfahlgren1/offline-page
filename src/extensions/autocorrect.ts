@@ -83,6 +83,32 @@ export function findFix(state: EditorState, id: number): FixPosition | null {
   return found ? { fix: fixSpec(found), from: found.from, to: found.to } : null;
 }
 
+const GLIDE_MILLISECONDS = 180;
+
+/** How wide the text between two positions is drawn, or null when it wraps onto a second line. */
+function widthOnOneLine(view: EditorView, from: number, to: number): number | null {
+  const start = view.coordsAtPos(from);
+  const end = view.coordsAtPos(to, -1);
+  return Math.abs(start.top - end.top) < 1 ? end.right - start.left : null;
+}
+
+/**
+ * A fix can change a word's width ("to" → "too"), which would make the rest of the line, and the cursor, jump
+ * sideways in a single frame. Instead the fixed word starts out taking up its old width and eases to its new one, so
+ * what follows glides into place.
+ */
+function glideToNewWidth(view: EditorView, fixId: number, widthBefore: number): void {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const word = view.dom.querySelector<HTMLElement>(`[data-fix-id="${fixId}"]`);
+  if (!word || word.getClientRects().length !== 1) return;
+  const change = widthBefore - word.getBoundingClientRect().width;
+  if (Math.abs(change) < 0.5) return;
+  word.animate([{ marginRight: `${change}px` }, { marginRight: "0px" }], {
+    duration: GLIDE_MILLISECONDS,
+    easing: "cubic-bezier(0.2, 0, 0, 1)",
+  });
+}
+
 /** Puts the original word back as its own undo step, and stops the same fix from coming back. */
 export function revertFix(view: EditorView, models: Models | null, id: number): void {
   const found = findFix(view.state, id);
@@ -131,7 +157,9 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
         milliseconds,
       };
       const meta: Meta = { type: "add", fix, from, to: from + fix.replacement.length };
+      const widthBefore = widthOnOneLine(view, from, to);
       view.dispatch(closeHistory(view.state.tr.insertText(fix.replacement, from, to).setMeta(autocorrectKey, meta)));
+      if (widthBefore !== null) glideToNewWidth(view, fix.id, widthBefore);
     };
 
     /** Checks the words before `text`'s end. `blockStart` is the document position of the text's first character. */

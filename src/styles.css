@@ -428,40 +428,45 @@
     @apply opacity-50;
   }
 
+  /* The info button is faint until its row is pointed at, so the two rows read as names first. */
   .model-info {
-    @apply -mr-1;
+    @apply -mr-1 size-6 text-side-faint opacity-60;
   }
 
-  /* An on/off switch: a track with a knob that slides across. The padding makes it easy to hit with a thumb. */
+  .model-info svg {
+    @apply size-[13px];
+  }
+
+  .model:hover .model-info,
+  .model-info:focus-visible,
+  .model-info[aria-expanded="true"] {
+    @apply opacity-100;
+  }
+
+  /*
+   * A small on/off switch: a track with a knob that slides across. Its colors are mixed from the sidebar's own, so
+   * "on" is a soft mid-tone in both themes instead of the strongest color on the panel. The padding keeps it easy
+   * to hit.
+   */
   .switch {
     @apply -my-1.5 -mr-1.5 flex-none rounded-full p-1.5;
   }
 
   .switch i {
-    @apply relative block h-5 w-[34px] rounded-full transition-colors duration-150;
+    @apply relative block h-[14px] w-6 rounded-full transition-colors duration-150;
     background: var(--leader);
   }
 
   .switch i::after {
-    @apply absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow-sm transition-transform duration-150 content-[''];
+    @apply absolute top-0.5 left-0.5 size-2.5 rounded-full bg-side transition-transform duration-150 content-[''];
   }
 
   .switch[aria-checked="true"] i {
-    @apply bg-side-ink;
+    background: color-mix(in srgb, var(--side-ink) 50%, var(--side));
   }
 
   .switch[aria-checked="true"] i::after {
-    @apply translate-x-[14px];
-  }
-
-  :root[data-theme="dark"] .switch[aria-checked="true"] i::after {
-    @apply bg-side;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .switch[aria-checked="true"] i::after {
-      @apply bg-side;
-    }
+    @apply translate-x-2.5;
   }
 
   /* Fingers need bigger targets than a mouse pointer does. */
@@ -472,6 +477,11 @@
 
     .side-icon {
       @apply size-10;
+    }
+
+    /* No hover on a touch screen, so the info button is always fully visible there. */
+    .model-info {
+      @apply opacity-100;
     }
 
     .new-page {
