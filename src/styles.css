@@ -245,7 +245,7 @@
     @apply text-line;
   }
 
-  /* A fixed word: faint underline, purple when the model fixed it from context, blue for spelling and capitals. */
+  /* A fixed word: faint underline, purple when the model fixed it from context, blue for spelling. */
   .fix {
     @apply cursor-pointer underline decoration-2 underline-offset-[5px];
   }
@@ -254,9 +254,7 @@
     text-decoration-color: var(--context-line);
   }
 
-  .fix-spelling,
-  .fix-sentence-start,
-  .fix-calendar {
+  .fix-spelling {
     text-decoration-color: var(--spelling-line);
   }
 
@@ -364,25 +362,20 @@
   }
 
   .models {
-    @apply flex flex-col gap-1.5 border-t pt-3;
+    @apply flex flex-col gap-0.5 border-t pt-3;
     border-color: var(--side-line);
   }
 
   .model {
-    @apply flex w-full items-baseline gap-2 text-left;
+    @apply flex min-h-8 w-full items-center gap-2;
   }
 
   .model-n {
     @apply w-[18px] flex-none font-sans text-[11px] font-medium text-side-faint;
   }
 
-  .model[aria-checked="true"] .model-n:first-child {
+  #model-tinyfix[data-on] .model-n {
     @apply text-context;
-  }
-
-  #toggle-tinynext[aria-checked="true"] .model-n,
-  #toggle-capitals[aria-checked="true"] .model-n {
-    @apply text-side-faint;
   }
 
   .model-name {
@@ -393,29 +386,63 @@
     @apply font-serif text-[1.1em] font-medium;
   }
 
-  .pill {
-    @apply inline-block w-[38px] flex-none rounded-full py-0.5 text-center font-sans text-[10px] font-semibold tracking-[0.06em];
-  }
-
-  .model[aria-checked="true"] .pill {
-    @apply bg-side-ink text-side;
-  }
-
-  .model[aria-checked="true"] .pill::after {
-    content: "ON";
-  }
-
-  .model[aria-checked="false"] .pill {
-    @apply text-side-faint;
-    box-shadow: inset 0 0 0 1px var(--leader);
-  }
-
-  .model[aria-checked="false"] .pill::after {
-    content: "OFF";
-  }
-
-  .model[aria-checked="false"] .model-name {
+  .model:not([data-on]) .model-name {
     @apply opacity-50;
+  }
+
+  .model-info {
+    @apply -mr-1;
+  }
+
+  /* An on/off switch: a track with a knob that slides across. The padding makes it easy to hit with a thumb. */
+  .switch {
+    @apply -my-1.5 -mr-1.5 flex-none rounded-full p-1.5;
+  }
+
+  .switch i {
+    @apply relative block h-5 w-[34px] rounded-full transition-colors duration-150;
+    background: var(--leader);
+  }
+
+  .switch i::after {
+    @apply absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow-sm transition-transform duration-150 content-[''];
+  }
+
+  .switch[aria-checked="true"] i {
+    @apply bg-side-ink;
+  }
+
+  .switch[aria-checked="true"] i::after {
+    @apply translate-x-[14px];
+  }
+
+  :root[data-theme="dark"] .switch[aria-checked="true"] i::after {
+    @apply bg-side;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .switch[aria-checked="true"] i::after {
+      @apply bg-side;
+    }
+  }
+
+  /* Fingers need bigger targets than a mouse pointer does. */
+  @media (pointer: coarse) {
+    .model {
+      @apply min-h-11;
+    }
+
+    .side-icon {
+      @apply size-10;
+    }
+
+    .new-page {
+      @apply inline-flex min-h-11 items-center;
+    }
+
+    .switch {
+      @apply -my-2.5 -mr-2.5 p-2.5;
+    }
   }
 
   .side-foot {
@@ -522,13 +549,9 @@
     @apply fixed z-40 w-48 rounded-xl bg-surface p-1 font-sans shadow-float;
   }
 
-  /* The card behind the sidebar's info button: what each switch does, in a sentence. */
+  /* The card behind a model's info button: what the model does, in a sentence. */
   .info-card {
-    @apply fixed z-40 w-[min(300px,calc(100vw-24px))] rounded-[14px] bg-surface px-4 py-1 font-sans text-ink shadow-float;
-  }
-
-  .info-row {
-    @apply border-b border-line py-3 last:border-0;
+    @apply fixed z-40 w-[min(300px,calc(100vw-24px))] rounded-[14px] bg-surface px-4 py-3.5 font-sans text-ink shadow-float;
   }
 
   .info-name {

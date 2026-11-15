@@ -7,7 +7,6 @@ import { FixPopover } from "./fixPopover";
 import type { Models } from "./models";
 import { settings } from "./settings";
 import { store, type DocRecord, type DocSummary } from "./store";
-import { CapitalUndos, type CapitalRules } from "./tinyfix/capitals";
 import { TinyNextClient } from "./tinynext/client";
 import "./styles.css";
 import { WELCOME_MARKDOWN, WELCOME_TITLE } from "./welcome";
@@ -40,9 +39,6 @@ const ui = {
   editorHost: element("editor"),
   modelsStatus: element("models-status"),
   modelsInfo: element("models-info"),
-  modelsInfoButton: element<HTMLButtonElement>("models-info-button"),
-  capitalsToggle: element<HTMLButtonElement>("toggle-capitals"),
-  capitalsSpine: element("spine-capitals"),
 };
 
 let models: Models | null = null;
@@ -51,28 +47,9 @@ let editor: Editor | null = null;
 let current: DocRecord | null = null;
 let saveTimer: number | undefined;
 
-/** Capitals undone on each page this session, by page id. */
-const capitalUndos = new Map<string, CapitalUndos>();
-
-function capitalUndosFor(id: string): CapitalUndos {
-  const existing = capitalUndos.get(id);
-  if (existing) return existing;
-  const created = new CapitalUndos();
-  capitalUndos.set(id, created);
-  return created;
-}
-
-const activeCapitals = (): CapitalRules | null => (settings.isCapitalsOn() && current ? capitalUndosFor(current.id).rules() : null);
-
-/** Remembers an undone capital on the current page. Other fixes are remembered by tinyfix. */
-function noteCapitalUndone(fix: AppliedFix): void {
-  if (current && (fix.kind === "sentence-start" || fix.kind === "calendar")) capitalUndosFor(current.id).record(fix.kind, fix.original);
-}
-
 const popover = new FixPopover((fix) => {
   if (!editor) return;
   revertFix(editor.view, models, fix.id);
-  noteCapitalUndone(fix);
   editor.commands.focus();
 });
 
@@ -143,8 +120,6 @@ function open(saved: DocRecord, opened?: OpenContent, focus: "start" | "end" = "
     getModels: activeModels,
     getTinyNext: activeTinyNext,
     onFixClick: (fix, anchor) => popover.show(fix, anchor),
-    getCapitals: activeCapitals,
-    onCapitalUndone: noteCapitalUndone,
     onUpdate: () => {
       renderMeta();
       setSaveStatus("Saving…", "busy");
@@ -257,6 +232,7 @@ function renderPages(): void {
 }
 
 function setSidebar(open: boolean, remember = false): void {
+  if (!open) closeModelInfo();
   closeMenu();
   document.documentElement.dataset.sidebar = open ? "open" : "closed";
   if (remember && !isDrawer()) settings.setSidebarOpen(open);
@@ -387,67 +363,71 @@ function renderStatus(): void {
   ui.modelsStatus.title = modelState === "error" ? `Writing and saving still work. ${loadError}` : "";
   ui.modelsStatus.toggleAttribute("data-ready", modelState === "ready");
   ui.modelsStatus.toggleAttribute("data-error", modelState === "error");
-  if (!ui.modelsInfo.hidden) renderModelsInfo();
+  if (openInfo) renderModelInfo(openInfo);
 }
 
-const CAPITALS_INFO = "Capitals for sentence starts, days and months. Rules, with no model.";
-
-function modelsInfoFooter(): string {
+function modelInfoFooter(): string {
   if (modelState === "error") return "The models couldn’t load. Writing and saving still work.";
-  if (modelState === "loading") return "Loading the models…";
-  const loaded = `Loaded in ${loadMilliseconds} ms.`;
-  return worksOffline ? `Everything runs in this tab and is saved for offline use. ${loaded}` : `Everything runs in this tab. ${loaded}`;
+  if (modelState === "loading") return "Loading…";
+  return worksOffline ? "Runs in this tab and is saved for offline use." : "Runs in this tab.";
 }
 
-/** What each switch does, in a sentence, with a link to the model. All of the text comes from this file and brand.ts. */
-function renderModelsInfo(): void {
-  const rows = MODEL_IDS.map(
-    (id) => `<div class="info-row">
-      <div class="flex items-baseline justify-between gap-3">
-        <span><span class="info-name">${MODELS[id].name}</span> <span class="info-kind">${MODELS[id].role} · ${MODELS[id].size}</span></span>
-        <a class="info-link" href="${hubUrl(id)}" target="_blank" rel="noopener">Model ↗</a>
-      </div>
-      <p class="info-text">${MODELS[id].caveat}</p>
-    </div>`,
-  );
-  ui.modelsInfo.innerHTML = `${rows.join("")}
-    <div class="info-row"><span class="info-name">capitals</span><p class="info-text">${CAPITALS_INFO}</p></div>
-    <div class="info-row"><p class="info-text mt-0">${modelsInfoFooter()}</p></div>`;
+/** The model whose info card is open, if any. */
+let openInfo: ModelId | null = null;
+const infoButton = (id: ModelId) => element<HTMLButtonElement>(`info-${id}`);
+
+/** What a model does, in a sentence, with a link to it. All of the text comes from brand.ts. */
+function renderModelInfo(id: ModelId): void {
+  ui.modelsInfo.innerHTML = `<div class="flex items-baseline justify-between gap-3">
+      <span><span class="info-name">${MODELS[id].name}</span> <span class="info-kind">${MODELS[id].role} · ${MODELS[id].size}</span></span>
+      <a class="info-link" href="${hubUrl(id)}" target="_blank" rel="noopener">Model ↗</a>
+    </div>
+    <p class="info-text">${MODELS[id].caveat}</p>
+    <p class="info-text text-faint">${modelInfoFooter()}</p>`;
 }
 
-const closeInfoOnOutsideClick = (event: MouseEvent): void => {
+const closeInfoOnOutsidePress = (event: PointerEvent): void => {
   const target = event.target as Node;
-  if (!ui.modelsInfo.contains(target) && !ui.modelsInfoButton.contains(target)) closeModelsInfo();
+  if (!ui.modelsInfo.contains(target) && !MODEL_IDS.some((id) => infoButton(id).contains(target))) closeModelInfo();
 };
 
-function closeModelsInfo(): void {
+function closeModelInfo(): void {
+  if (!openInfo) return;
+  infoButton(openInfo).setAttribute("aria-expanded", "false");
+  openInfo = null;
   ui.modelsInfo.hidden = true;
-  ui.modelsInfoButton.setAttribute("aria-expanded", "false");
-  document.removeEventListener("mousedown", closeInfoOnOutsideClick);
+  document.removeEventListener("pointerdown", closeInfoOnOutsidePress);
 }
 
-/** Opens the card above the button, since the button sits at the bottom of the sidebar. */
-function openModelsInfo(): void {
-  renderModelsInfo();
-  const box = ui.modelsInfoButton.getBoundingClientRect();
-  ui.modelsInfo.style.bottom = `${window.innerHeight - box.top + 8}px`;
-  ui.modelsInfo.style.left = `${Math.max(12, Math.min(box.left - 8, window.innerWidth - 312))}px`;
+const INFO_CARD_MARGIN = 12;
+
+/** Opens the card above the model's row, since the rows sit at the bottom of the sidebar, and keeps it on screen. */
+function openModelInfo(id: ModelId): void {
+  closeModelInfo();
+  openInfo = id;
+  renderModelInfo(id);
   ui.modelsInfo.hidden = false;
-  ui.modelsInfoButton.setAttribute("aria-expanded", "true");
-  document.addEventListener("mousedown", closeInfoOnOutsideClick);
+  const box = infoButton(id).getBoundingClientRect();
+  const furthestLeft = window.innerWidth - ui.modelsInfo.offsetWidth - INFO_CARD_MARGIN;
+  ui.modelsInfo.style.bottom = `${window.innerHeight - box.top + 6}px`;
+  ui.modelsInfo.style.left = `${Math.max(INFO_CARD_MARGIN, Math.min(box.right - ui.modelsInfo.offsetWidth, furthestLeft))}px`;
+  infoButton(id).setAttribute("aria-expanded", "true");
+  document.addEventListener("pointerdown", closeInfoOnOutsidePress);
 }
 
-ui.modelsInfoButton.addEventListener("click", () => (ui.modelsInfo.hidden ? openModelsInfo() : closeModelsInfo()));
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !ui.modelsInfo.hidden) closeModelsInfo();
+  if (event.key === "Escape") closeModelInfo();
 });
+// The card is placed against the window, so it's closed rather than left behind when the window changes.
+window.addEventListener("resize", closeModelInfo);
 
 function renderModelToggles(): void {
   for (const id of MODEL_IDS) {
     const on = settings.isModelOn(id);
+    element(`model-${id}`).toggleAttribute("data-on", on);
     const toggle = element<HTMLButtonElement>(`toggle-${id}`);
     toggle.setAttribute("aria-checked", String(on));
-    toggle.title = `${MODELS[id].role}, ${MODELS[id].size}. ${MODELS[id].caveat} Click to turn it ${on ? "off" : "on"}.`;
+    toggle.title = `Turn ${MODELS[id].name} ${on ? "off" : "on"}`;
     element(`spine-${id}`).toggleAttribute("data-on", on);
   }
 }
@@ -458,19 +438,8 @@ for (const id of MODEL_IDS) {
     renderModelToggles();
     if (id === "tinynext" && editor && !settings.isModelOn(id)) editor.view.dispatch(editor.state.tr.setMeta(suggestionsKey, { type: "clear" }));
   });
+  infoButton(id).addEventListener("click", () => (openInfo === id ? closeModelInfo() : openModelInfo(id)));
 }
-
-function renderCapitalsToggle(): void {
-  const on = settings.isCapitalsOn();
-  ui.capitalsToggle.setAttribute("aria-checked", String(on));
-  ui.capitalsToggle.title = `Capitals at the start of sentences and on days and months. Needs no model. Click to turn it ${on ? "off" : "on"}.`;
-  ui.capitalsSpine.toggleAttribute("data-on", on);
-}
-
-ui.capitalsToggle.addEventListener("click", () => {
-  settings.setCapitalsOn(!settings.isCapitalsOn());
-  renderCapitalsToggle();
-});
 
 /** Exposed for latency checks: milliseconds per tinynext suggestion, measured in its worker. */
 declare global {
@@ -547,7 +516,6 @@ async function startOfflineCache(): Promise<void> {
 applyTheme(readTheme());
 setSidebar(!isDrawer() && settings.isSidebarOpen());
 renderModelToggles();
-renderCapitalsToggle();
 renderStatus();
 // In its own task, so starting the editor doesn't add to the time the script itself takes to run. On a first visit
 // index.html already shows the welcome page, so the editor waits until that has been drawn once.

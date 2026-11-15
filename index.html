@@ -63,22 +63,20 @@
       <div class="min-h-6 flex-1"></div>
 
       <div class="models" role="group" aria-label="On-device models">
-        <div class="flex items-center gap-2">
+        <div class="flex items-baseline gap-2">
           <p class="side-caption mt-0">On this device</p>
           <span id="models-status" class="min-w-0 flex-1 truncate font-sans text-[11px] text-side-faint data-[error]:text-error">Loading…</span>
-          <button id="models-info-button" class="side-icon -mr-1.5" type="button" aria-label="About the models" aria-haspopup="dialog" aria-expanded="false">
-            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.75" /><path d="M8 7.25v3.5" stroke-linecap="round" /><circle cx="8" cy="5.1" r="0.55" fill="currentColor" stroke="none" /></svg>
-          </button>
         </div>
-        <button id="toggle-tinyfix" class="model" type="button" role="switch" aria-checked="true">
-          <span class="model-n">01</span><span class="model-name">tiny<i class="text-context">fix</i></span><span class="leader"></span><span class="pill"></span>
-        </button>
-        <button id="toggle-tinynext" class="model" type="button" role="switch" aria-checked="true">
-          <span class="model-n">02</span><span class="model-name">tiny<i class="opacity-55">next</i></span><span class="leader"></span><span class="pill"></span>
-        </button>
-        <button id="toggle-capitals" class="model" type="button" role="switch" aria-checked="true">
-          <span class="model-n">03</span><span class="model-name">capitals</span><span class="leader"></span><span class="pill"></span>
-        </button>
+        <div id="model-tinyfix" class="model">
+          <span class="model-n">01</span><span class="model-name">tiny<i class="text-context">fix</i></span><span class="leader"></span>
+          <button id="info-tinyfix" class="side-icon model-info" type="button" aria-label="About tinyfix" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.75" /><path d="M8 7.25v3.5" stroke-linecap="round" /><circle cx="8" cy="5.1" r="0.55" fill="currentColor" stroke="none" /></svg></button>
+          <button id="toggle-tinyfix" class="switch" type="button" role="switch" aria-checked="true" aria-label="tinyfix"><i></i></button>
+        </div>
+        <div id="model-tinynext" class="model">
+          <span class="model-n">02</span><span class="model-name">tiny<i class="opacity-55">next</i></span><span class="leader"></span>
+          <button id="info-tinynext" class="side-icon model-info" type="button" aria-label="About tinynext" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.75" /><path d="M8 7.25v3.5" stroke-linecap="round" /><circle cx="8" cy="5.1" r="0.55" fill="currentColor" stroke="none" /></svg></button>
+          <button id="toggle-tinynext" class="switch" type="button" role="switch" aria-checked="true" aria-label="tinynext"><i></i></button>
+        </div>
       </div>
       <div class="side-foot">
         <a class="hover:text-side-ink" href="https://huggingface.co/paperweight" target="_blank" rel="noopener">🤗 Hugging Face ↗</a>
@@ -92,7 +90,7 @@
       </button>
       <button class="side-icon more-button" type="button" aria-label="More" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.5" cy="8" r="1.1" /><circle cx="8" cy="8" r="1.1" /><circle cx="12.5" cy="8" r="1.1" /></svg></button>
       <span class="spine-title">offlinepage<i>.app</i></span>
-      <span class="spine-dots" aria-hidden="true"><i id="spine-tinyfix"></i><i id="spine-tinynext"></i><i id="spine-capitals"></i></span>
+      <span class="spine-dots" aria-hidden="true"><i id="spine-tinyfix"></i><i id="spine-tinynext"></i></span>
     </div>
     <div id="backdrop" class="backdrop"></div>
     <div id="models-info" class="info-card" role="dialog" aria-label="About the models" hidden></div>
