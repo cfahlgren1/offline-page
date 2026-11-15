@@ -22,7 +22,7 @@
 
 ### What to expect
 
-- **Fast, private and offline first, accurate second.** tinyfix catches about a third of wrong-word typos. When it does make a fix, it’s right about 94% of the time.
+- **Fast, private and offline first, accurate second.** tinyfix catches about 4 in 10 wrong-word typos. When it does make a fix, it’s right about 94% of the time.
 - **tinynext is small, so it stays quiet a lot.** It saves about 4% of typing on articles and email and 9% on chat-style messages. It trained on 3B tokens of web articles, chat and Enron email.
 - **Every fix is reversible.** Each one is its own undo step, so Backspace right after a fix undoes it. Purple underlines are fixes from context, blue ones are spelling. Tap one to see what it replaced.
 

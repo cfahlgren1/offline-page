@@ -12,7 +12,7 @@ A place to write with two tiny models that run inside this tab. Nothing you type
 ## What to expect
 
 - Misspellings like “recieve” are fixed as you finish the word, with a faint blue underline.
-- Real words in the wrong place, like “form” for “from”, are fixed from context, with a purple underline. tinyfix catches about a third of these, and when it does fix one it’s right about 94% of the time.
+- Real words in the wrong place, like “form” for “from”, are fixed from context, with a purple underline. tinyfix catches about 4 in 10 of these, and when it does fix one it’s right about 94% of the time.
 - tinynext reads the text around the cursor and only suggests when it’s at least 40% sure, so it stays quiet a lot. It learned from articles, chat and office email.
 - Type / for headings, lists, quotes and code. Export and Copy give you Markdown.
 `;

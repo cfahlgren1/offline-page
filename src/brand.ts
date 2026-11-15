@@ -19,7 +19,7 @@ export const MODELS = {
     role: "Autocorrect",
     size: "2.1 MB",
     repo: "paperweight/tinyfix",
-    caveat: "Catches about a third of wrong-word typos, and is right about 94% of the time when it fixes one.",
+    caveat: "Catches about 4 in 10 wrong-word typos, and is right about 94% of the time when it fixes one.",
   },
   tinynext: {
     name: "tinynext",

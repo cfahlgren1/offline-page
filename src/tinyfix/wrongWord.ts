@@ -1,6 +1,6 @@
 import type * as Ort from "onnxruntime-web";
 import type { ContextScorer, Correction } from "./fixer.js";
-import { isCheckable, matchCase } from "./rules.js";
+import { isCheckable, isSentenceStart, matchCase } from "./rules.js";
 import { WordTrie } from "./trie.js";
 import { typoCost } from "./typoCost.js";
 
@@ -18,10 +18,17 @@ const SPECIAL_TOKENS = 5;
 
 /** Known mix-ups like "their" and "there" are likely even when they're far apart on the keyboard. */
 const MAX_KNOWN_MIXUP_COST = 1.5;
+/** A known mix-up needs to clear a lower bar than other nearby words, which are mostly slips of the fingers. */
+const KNOWN_MIXUP_BONUS = 1;
+/** For a word with known mix-ups, any other nearby word needs to clear a higher bar: "your" is rarely meant as "you". */
+const OTHER_WORD_PENALTY = 1;
+/** With nothing to its left the model is less sure: "Buy one, get one free" is not "By one". */
+const SENTENCE_START_PENALTY = 1;
 
 const TOKEN = /[A-Za-z]+(?:'[A-Za-z]+)?|\d+(?:[.,]\d+)*|[^\s\w]/g;
 const SENTENCE_OPENERS = new Set([".", "!", "?", ":", '"']);
 const WORD = /^[a-z]+(?:'[a-z]+)?$/;
+const LISTED_WORD = /^[A-Za-z]+(?:'[A-Za-z]+)?$/;
 
 export interface WrongWordOptions {
   ort: typeof Ort;
@@ -43,8 +50,11 @@ export interface WrongWordSettings {
 /** Tuned on a dev split to wrongly change at most about 1 correct word in 2,000. */
 export const CAREFUL_WRONG_WORD: WrongWordSettings = { threshold: 5, costWeight: 0.5 };
 
-/** Tuned the same way to at most about 1 in 500: fixes more wrong words, and changes more correct ones. */
-export const EAGER_WRONG_WORD: WrongWordSettings = { threshold: 2, costWeight: 1 };
+/**
+ * On the lab bench's test sets this fixes about 40% of wrong words and wrongly changes about 1 correct word in 1,800,
+ * the same as the model before it. A threshold of 2.5 fixes about 3 points more and changes about 1 in 1,400.
+ */
+export const EAGER_WRONG_WORD: WrongWordSettings = { threshold: 3, costWeight: 1.5 };
 
 export interface WrongWordFinder {
   check(textBefore: string, word: string, textAfter: string): Promise<Correction | null>;
@@ -56,6 +66,8 @@ export interface NearbyWord {
   margin: number;
   /** How unlikely it is to type the given word when meaning this one. */
   cost: number;
+  /** True when the word is a known mix-up for the typed word. */
+  isKnownMixup: boolean;
 }
 
 const pad = (ids: readonly number[], length: number): number[] => [...new Array<number>(length - ids.length).fill(PAD), ...ids];
@@ -114,10 +126,10 @@ export class WrongWordChecker implements WrongWordFinder, ContextScorer {
   }
 
   /** Returns nearby words with how well each fits, or null when the word isn't one the model can judge. */
-  async compare(textBefore: string, word: string, textAfter: string): Promise<NearbyWord[] | null> {
+  async compare(textBefore: string, word: string, textAfter: string, onlyKnownMixups = false): Promise<NearbyWord[] | null> {
     const typed = this.ids.get(word.toLowerCase());
     if (typed === undefined || typed < SPECIAL_TOKENS) return null;
-    const nearby = this.nearbyIds(typed);
+    const nearby = onlyKnownMixups ? (this.knownMixups.get(typed) ?? []) : this.nearbyIds(typed);
     if (nearby.length === 0) return null;
 
     const scores = await this.runModel(textBefore, textAfter, [[typed, ...nearby]]);
@@ -125,7 +137,8 @@ export class WrongWordChecker implements WrongWordFinder, ContextScorer {
     return nearby.map((id, index) => {
       const nearbyWord = this.options.vocabulary[id]!;
       const cost = typoCost(word.toLowerCase(), nearbyWord);
-      return { word: nearbyWord, margin: scores[index + 1]! - scores[0]!, cost: mixups.includes(id) ? Math.min(cost, MAX_KNOWN_MIXUP_COST) : cost };
+      const isKnownMixup = mixups.includes(id);
+      return { word: nearbyWord, margin: scores[index + 1]! - scores[0]!, cost: isKnownMixup ? Math.min(cost, MAX_KNOWN_MIXUP_COST) : cost, isKnownMixup };
     });
   }
 
@@ -153,16 +166,44 @@ export class WrongWordChecker implements WrongWordFinder, ContextScorer {
     return output.scores!.data as Float32Array;
   }
 
+  /** Short words and words with an apostrophe are left to the list of known mix-ups ("to" and "too", "it's" and "its"). */
+  private hasKnownMixups(word: string, textBefore: string): boolean {
+    const id = this.ids.get(word.toLowerCase());
+    if (id === undefined || !this.knownMixups.has(id) || !LISTED_WORD.test(word)) return false;
+    if (word.length > 1 && word === word.toUpperCase()) return false;
+    const isCapitalized = word[0] !== word[0]!.toLowerCase();
+    return !isCapitalized || isSentenceStart(textBefore);
+  }
+
+  /** Whether a word is judged at all, and if so whether only against its known mix-ups. Null means leave it alone. */
+  judgedAgainst(word: string, textBefore: string): "nearby" | "knownMixups" | null {
+    if (isCheckable(word, textBefore)) return "nearby";
+    return this.hasKnownMixups(word, textBefore) ? "knownMixups" : null;
+  }
+
+  private value(item: NearbyWord, typedHasMixups: boolean): number {
+    const value = item.margin - this.settings.costWeight * item.cost;
+    if (item.isKnownMixup) return value + KNOWN_MIXUP_BONUS;
+    return typedHasMixups ? value - OTHER_WORD_PENALTY : value;
+  }
+
+  /** How far a nearby word's value must clear the threshold, given where the typed word is. */
+  private bar(textBefore: string): number {
+    return this.settings.threshold + (isSentenceStart(textBefore) ? SENTENCE_START_PENALTY : 0);
+  }
+
   /** Returns a fix when a nearby word fits the sentence clearly better than the one typed. */
   async check(textBefore: string, word: string, textAfter: string): Promise<Correction | null> {
-    if (!isCheckable(word, textBefore)) return null;
-    const nearby = await this.compare(textBefore, word, textAfter);
+    const judged = this.judgedAgainst(word, textBefore);
+    if (!judged) return null;
+    const nearby = await this.compare(textBefore, word, textAfter, judged === "knownMixups");
     if (!nearby) return null;
+    const typedHasMixups = nearby.some((item) => item.isKnownMixup);
     const ranked = nearby
-      .map((item) => ({ ...item, value: item.margin - this.settings.costWeight * item.cost }))
+      .map((item) => ({ ...item, value: this.value(item, typedHasMixups) }))
       .sort((first, second) => second.value - first.value);
     const best = ranked[0]!;
-    if (best.value < this.settings.threshold) return null;
+    if (best.value < this.bar(textBefore)) return null;
     return { original: word, replacement: matchCase(word, best.word), confidence: 1 / (1 + Math.exp(-best.margin)), usedContext: true };
   }
 }

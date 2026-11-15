@@ -1,4 +1,4 @@
-import { applyFixedRule, isBritishSpelling, isCheckable, matchCase } from "./rules.js";
+import { applyFixedRule, isBritishSpelling, isCheckable, isNewerWord, matchCase } from "./rules.js";
 import { WordTrie } from "./trie.js";
 import { typoCost } from "./typoCost.js";
 
@@ -91,7 +91,8 @@ export class Fixer {
 
   isKnown(word: string): boolean {
     const lower = word.toLowerCase();
-    return this.known.has(lower) || isBritishSpelling(lower, (candidate) => this.known.has(candidate));
+    const isListed = (candidate: string) => this.known.has(candidate);
+    return isListed(lower) || isNewerWord(lower) || isBritishSpelling(lower, isListed);
   }
 
   /** Ranks spelling candidates for an unknown word, or returns null when the word should be left alone. */
