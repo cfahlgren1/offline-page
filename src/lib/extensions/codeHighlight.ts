@@ -39,6 +39,10 @@ const ALIASES: Readonly<Record<string, string>> = {
 
 const MAX_CACHED_BLOCKS = 200;
 
+/** Each run of code carries its color for both themes as CSS variables, and the page's theme picks one. */
+const TOKEN_CLASS =
+  "text-(--hls-light) [font-style:var(--hls-light-font-style,normal)] [font-weight:var(--hls-light-font-weight,inherit)] dark:text-(--hls-dark) dark:[font-style:var(--hls-dark-font-style,normal)] dark:[font-weight:var(--hls-dark-font-weight,inherit)]";
+
 const languageOf = (block: ProseMirrorNode): string => {
   const typed = String(block.attrs.language ?? "").toLowerCase();
   return ALIASES[typed] ?? typed;
@@ -56,7 +60,10 @@ function hasCodeBlock(doc: ProseMirrorNode): boolean {
 /** The small language menu in a code block's corner. Choosing from it sets the block's language. */
 function languagePicker(view: EditorView, getPosition: () => number | undefined, current: string): HTMLElement {
   const picker = document.createElement("select");
-  picker.className = "code-language";
+  // Quiet until the block is hovered or it's in use. On a touch screen its text is 16px, which keeps iOS from zooming
+  // the page when the menu opens.
+  picker.className =
+    "absolute top-2 right-2 max-w-[45%] cursor-pointer appearance-none rounded-md bg-transparent px-2 py-1 font-sans text-[11.5px] text-faint hover:bg-hover hover:text-sub focus-visible:text-sub pointer-coarse:min-h-9 pointer-coarse:text-base";
   picker.setAttribute("aria-label", "Code language");
   picker.contentEditable = "false";
   const known = LANGUAGES.some(([value]) => value === current);
@@ -112,7 +119,7 @@ export const CodeHighlight = Extension.create({
         );
         for (const range of rangesFor(block.textContent, language)) {
           decorations.push(
-            Decoration.inline(start + range.from, start + range.to, { class: "tok", style: range.style }),
+            Decoration.inline(start + range.from, start + range.to, { class: TOKEN_CLASS, style: range.style }),
           );
         }
         return false;

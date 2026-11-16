@@ -49,11 +49,13 @@ function contextAtCursor(state: EditorState): { context: string; after: string; 
 
 function ghostElement(text: string): HTMLElement {
   const wrapper = document.createElement("span");
-  wrapper.className = "ghost";
+  wrapper.className = "pointer-events-none text-ghost";
+  wrapper.dataset.ghost = "";
   wrapper.setAttribute("aria-hidden", "true");
   wrapper.textContent = text;
   const key = document.createElement("kbd");
-  key.className = "ghost-key";
+  key.className =
+    "ml-2 inline-flex items-center rounded-md border border-b-2 border-line px-[7px] align-[0.2em] font-sans text-[11px] leading-[1.5] font-semibold tracking-[0.02em] text-sub";
   key.textContent = "tab";
   wrapper.append(key);
   return wrapper;

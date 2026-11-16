@@ -16,7 +16,7 @@
   function closeOnOutsidePress(event: PointerEvent): void {
     if (!modelInfo.id) return;
     const target = event.target as Element;
-    if (!card?.contains(target) && !target.closest(".model-name")) closeModelInfo();
+    if (!card?.contains(target) && !target.closest('[aria-haspopup="dialog"]')) closeModelInfo();
   }
 </script>
 
@@ -30,7 +30,7 @@
 <!-- What a model does, in a sentence, with a link to it. All of the text comes from brand.ts. -->
 <div
   id="models-info"
-  class="info-card"
+  class="fixed z-40 w-[min(300px,calc(100vw-24px))] rounded-[14px] bg-surface px-4 py-3.5 font-sans text-ink shadow-float"
   role="dialog"
   aria-label="About the models"
   tabindex="-1"
@@ -44,11 +44,18 @@
   {#if modelInfo.id}
     {@const model = MODELS[modelInfo.id]}
     <div class="flex items-baseline justify-between gap-3">
-      <span><span class="info-name">{model.name}</span> <span class="info-kind">{model.role} · {model.size}</span></span
+      <span>
+        <span class="text-[13px] font-[650] tracking-[-0.01em]" data-model-name>{model.name}</span>
+        <span class="text-[11.5px] text-sub">{model.role} · {model.size}</span>
+      </span>
+      <a
+        class="flex-none text-[11.5px] text-sub underline decoration-line underline-offset-2 hover:text-ink"
+        href={hubUrl(modelInfo.id)}
+        target="_blank"
+        rel="noopener">Model ↗</a
       >
-      <a class="info-link" href={hubUrl(modelInfo.id)} target="_blank" rel="noopener">Model ↗</a>
     </div>
-    <p class="info-text">{model.caveat}</p>
-    <p class="info-text text-faint">{footer}</p>
+    <p class="mt-1 text-[12.5px] leading-[1.45] text-sub">{model.caveat}</p>
+    <p class="mt-1 text-[12.5px] leading-[1.45] text-faint">{footer}</p>
   {/if}
 </div>

@@ -3,6 +3,8 @@
   import { onMount, tick } from "svelte";
   import type { Tinyfix } from "tinyfix";
   import type { ModelId } from "#lib/brand";
+  import Icon from "#lib/components/Icon.svelte";
+  import IconButton from "#lib/components/IconButton.svelte";
   import ModelInfoCard from "#lib/components/ModelInfoCard.svelte";
   import MoreMenu from "#lib/components/MoreMenu.svelte";
   import Sidebar from "#lib/components/Sidebar.svelte";
@@ -265,24 +267,23 @@
 />
 <Spine {modelOn} />
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions: Escape closes the drawer too -->
-<div id="backdrop" class="backdrop" onclick={() => setSidebar(false)}></div>
+<div
+  id="backdrop"
+  class="pointer-events-none fixed inset-0 z-20 bg-black/20 opacity-0 transition-opacity narrow:sidebar-open:pointer-events-auto narrow:sidebar-open:opacity-100"
+  onclick={() => setSidebar(false)}
+></div>
 <ModelInfoCard {status} />
 <MoreMenu getMarkdown={() => editor?.getMarkdown() ?? null} getTitle={() => (editor ? titleOf(editor) : "Untitled")} />
 
-<div id="shell" class="shell flex min-h-dvh flex-col">
-  <header class="flex items-center px-4 pt-4 min-[900px]:hidden">
-    <button
-      id="sidebar-open"
-      class="side-icon"
-      type="button"
-      aria-label="Show pages"
-      onclick={() => setSidebar(true, true)}
-    >
-      <svg viewBox="0 0 16 16" aria-hidden="true">
-        <rect x="2" y="2.5" width="12" height="11" rx="2.5" />
-        <path d="M6.5 2.5v11" />
-      </svg>
-    </button>
+<!-- The page moves over to make room for the sidebar, or for the spine when the sidebar is hidden. -->
+<div
+  id="shell"
+  class="flex min-h-dvh flex-col transition-[padding-left] duration-280 ease-sheet wide:sidebar-open:pl-[272px] wide:sidebar-closed:pl-11 preload:transition-none motion-reduce:transition-none"
+>
+  <header class="flex items-center px-4 pt-4 wide:hidden">
+    <IconButton id="sidebar-open" aria-label="Show pages" onclick={() => setSidebar(true, true)}>
+      <Icon name="panel" />
+    </IconButton>
   </header>
 
   <main class="mx-auto w-full max-w-[712px] flex-1 px-4 pt-6 pb-30 sm:pt-[96px]">
@@ -290,20 +291,27 @@
       <span id="meta">{meta}</span>
       <span
         id="save-chip"
-        class="group inline-flex items-center gap-1.5 data-[error]:text-error"
+        class="group inline-flex items-center gap-1.5 data-error:text-error"
         title={saveState === "saved" ? "Saved on this device" : saveText}
         data-busy={saveState === "busy" ? "" : undefined}
         data-error={saveState === "error" ? "" : undefined}
       >
-        <i class="size-1.5 flex-none rounded-full bg-ok group-data-[busy]:bg-faint group-data-[error]:bg-error"
-        ></i><span id="save-status" class="hidden group-data-[busy]:inline group-data-[error]:inline">{saveText}</span>
+        <i class="size-1.5 flex-none rounded-full bg-ok group-data-busy:bg-faint group-data-error:bg-error"></i><span
+          id="save-status"
+          class="hidden group-data-busy:inline group-data-error:inline">{saveText}</span
+        >
       </span>
     </div>
     <div id="editor">
       {#if !started}
         <!-- The welcome page as plain HTML, for a first visit and for search engines. Its text is ours, made at build time. -->
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        <div id="welcome-static" class="tiptap ProseMirror prose">{@html data.welcomeHtml}</div>
+        <div
+          id="welcome-static"
+          class="tiptap ProseMirror prose whitespace-break-spaces [font-feature-settings:'liga'_0] [font-variant-ligatures:none] returning:hidden"
+        >
+          {@html data.welcomeHtml}
+        </div>
       {/if}
       <div bind:this={host}></div>
     </div>

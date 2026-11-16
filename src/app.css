@@ -105,20 +105,53 @@
   --color-ghost: var(--ghost);
   --color-caret: var(--caret);
   --color-spelling: var(--spelling);
+  --color-spelling-line: var(--spelling-line);
   --color-context: var(--context);
+  --color-context-line: var(--context-line);
   --color-side: var(--side);
+  --color-side-line: var(--side-line);
   --color-side-ink: var(--side-ink);
   --color-side-sub: var(--side-sub);
   --color-side-faint: var(--side-faint);
+  --color-side-hover: var(--side-hover);
+  --color-leader: var(--leader);
   --color-ok: var(--ok);
   --color-error: var(--error);
   --shadow-float: var(--float);
+  --shadow-side: var(--side-shadow);
 }
 
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
   --font-serif: "Iowan Old Style", "Charter", "Newsreader", Georgia, serif;
   --font-mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  /* How the sidebar slides: quick out of the gate, soft at the end. */
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/*
+ * The page's state lives on <html>, where the first script in app.html puts it before anything is drawn. These
+ * variants let a component style itself from it: `sidebar-closed:-translate-x-full`, `dark:text-white`.
+ */
+@custom-variant sidebar-open (:root[data-sidebar="open"] &);
+@custom-variant sidebar-closed (:root[data-sidebar="closed"] &);
+/* Until the first frame is drawn, so nothing slides into place on load. */
+@custom-variant preload (:root.preload &);
+/* Someone with saved pages, who gets their own page instead of the welcome page. */
+@custom-variant returning (:root[data-returning] &);
+/* The sidebar sits beside the page on a wide screen and is a drawer over it on a narrow one. */
+@custom-variant wide (@media (min-width: 900px));
+@custom-variant narrow (@media (max-width: 899px));
+/* Dark mode follows the system unless the menu's button chose one. */
+@custom-variant dark {
+  &:where(:root[data-theme="dark"], :root[data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
 }
 
 /* The serif for systems without Iowan Old Style or Charter. It's bundled, so it works offline too. */
@@ -143,23 +176,6 @@
     scrollbar-color: var(--line) transparent;
   }
 
-  .pages {
-    scrollbar-width: thin;
-    scrollbar-color: var(--leader) transparent;
-  }
-
-  /* index.html carries the welcome page as plain HTML for a first visit. Someone with saved pages never sees it. */
-  :root[data-returning] #welcome-static {
-    display: none;
-  }
-
-  /* The editor sets these on its own content when it starts. Matching them keeps every line break where it is. */
-  #welcome-static {
-    white-space: break-spaces;
-    font-variant-ligatures: none;
-    font-feature-settings: "liga" 0;
-  }
-
   body {
     @apply bg-paper font-sans text-ink antialiased;
   }
@@ -173,7 +189,10 @@
   }
 }
 
-/* Tiptap renders the page's content, so its blocks are styled here rather than with classes in markup. */
+/*
+ * Tiptap writes the page's content as plain HTML with no classes, so it's the one thing styled here rather than in
+ * markup. Everything else is styled where it's drawn.
+ */
 @layer components {
   .prose {
     @apply font-serif text-[21px] leading-[1.75] wrap-break-word text-body caret-caret outline-none max-sm:text-[19px];
@@ -221,50 +240,13 @@
     @apply rounded-[5px] bg-chip px-[5px] py-0.5 font-mono text-[0.8em];
   }
 
-  .prose pre {
-    @apply mb-[26px] overflow-x-auto rounded-xl bg-chip px-5 py-[18px] text-[15px] leading-[1.6];
-  }
-
   /* Room at the top for the language menu, so it never sits over the first line of code. */
   .prose pre {
-    @apply relative pt-9;
+    @apply relative mb-[26px] overflow-x-auto rounded-xl bg-chip px-5 pt-9 pb-[18px] text-[15px] leading-[1.6];
   }
 
   .prose pre code {
     @apply bg-transparent p-0 text-[length:inherit];
-  }
-
-  /* Highlighted code: each run carries its color for both themes, and the page's theme picks one. */
-  .prose pre .tok {
-    color: var(--hls-light);
-    font-style: var(--hls-light-font-style, normal);
-    font-weight: var(--hls-light-font-weight, inherit);
-  }
-
-  :root[data-theme="dark"] .prose pre .tok {
-    color: var(--hls-dark);
-    font-style: var(--hls-dark-font-style, normal);
-    font-weight: var(--hls-dark-font-weight, inherit);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .prose pre .tok {
-      color: var(--hls-dark);
-      font-style: var(--hls-dark-font-style, normal);
-      font-weight: var(--hls-dark-font-weight, inherit);
-    }
-  }
-
-  /* The language menu in a code block's corner. Quiet until the block is hovered or it's in use. */
-  .code-language {
-    @apply absolute top-2 right-2 max-w-[45%] cursor-pointer appearance-none rounded-md bg-transparent px-2 py-1 font-sans text-[11.5px] text-faint hover:bg-hover hover:text-sub focus-visible:text-sub;
-  }
-
-  @media (pointer: coarse) {
-    /* 16px keeps iOS from zooming the page when the menu opens. */
-    .code-language {
-      @apply min-h-9 text-base;
-    }
   }
 
   .prose hr {
@@ -281,309 +263,5 @@
 
   .prose h1.is-empty::before {
     @apply text-line;
-  }
-
-  /* A fixed word: faint underline, purple when the model fixed it from context, blue for spelling. */
-  .fix {
-    @apply cursor-pointer underline decoration-2 underline-offset-[5px];
-  }
-
-  .fix-context {
-    text-decoration-color: var(--context-line);
-  }
-
-  .fix-spelling {
-    text-decoration-color: var(--spelling-line);
-  }
-
-  .ghost {
-    @apply pointer-events-none text-ghost;
-  }
-
-  .ghost-key {
-    @apply ml-2 inline-flex items-center rounded-md border border-b-2 border-line px-[7px] align-[0.2em] font-sans text-[11px] leading-[1.5] font-semibold tracking-[0.02em] text-sub;
-  }
-}
-
-/*
- * The sidebar is the notebook's table of contents: serif titles, numbered, with dotted leaders out to the time.
- * On wide screens it sits beside the page with a curved edge, and hides down to a spine. On narrow screens it's a drawer.
- */
-@layer components {
-  .sidebar {
-    @apply fixed inset-y-0 left-0 z-30 flex w-[272px] flex-col bg-side px-[22px] pt-[22px] pb-4 font-serif text-side-ink;
-    border-radius: 0 34px 34px 0;
-    box-shadow: var(--side-shadow);
-    transition: translate 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-
-  .side-brand {
-    @apply text-[22px] font-medium tracking-[-0.01em];
-  }
-
-  .side-brand i {
-    @apply text-side-sub;
-  }
-
-  .side-icon {
-    @apply inline-flex size-7 flex-none items-center justify-center rounded-[7px] text-side-sub hover:bg-(--side-hover) hover:text-side-ink;
-  }
-
-  .side-icon svg {
-    @apply size-4 fill-none stroke-current;
-    stroke-width: 1.5;
-  }
-
-  .side-tagline {
-    @apply mt-0.5 text-sm text-side-sub italic;
-  }
-
-  .side-caption {
-    @apply mt-7 font-sans text-[10.5px] font-semibold tracking-[0.14em] text-side-faint uppercase;
-  }
-
-  .pages {
-    @apply -mx-2 mt-2 min-h-0 overflow-y-auto overscroll-contain;
-  }
-
-  .page-row {
-    @apply relative flex w-full items-start gap-2 rounded-[10px] px-2 py-1.5 text-left hover:bg-(--side-hover);
-  }
-
-  .page-n {
-    @apply w-[18px] flex-none pt-[5px] font-sans text-[11px] font-medium text-side-faint;
-  }
-
-  .page-row[aria-current="page"] .page-n {
-    @apply text-context;
-  }
-
-  .page-row[aria-current="page"] .page-title {
-    @apply italic;
-  }
-
-  .page-line {
-    @apply flex min-w-0 items-baseline gap-2;
-  }
-
-  .page-title {
-    @apply min-w-0 truncate text-base;
-  }
-
-  .leader {
-    @apply min-w-3 flex-1 -translate-y-1 border-b-[1.5px] border-dotted;
-    border-color: var(--leader);
-  }
-
-  .page-when {
-    @apply flex-none font-sans text-[11px] font-medium text-side-faint;
-  }
-
-  .page-preview {
-    @apply mt-px block truncate text-[13px] text-side-sub italic;
-  }
-
-  .page-delete {
-    @apply absolute top-1.5 right-1.5 hidden rounded-md bg-side px-1.5 font-sans text-[11px] text-side-faint hover:text-error focus-visible:block;
-  }
-
-  li:hover > .page-delete {
-    @apply block;
-  }
-
-  li:hover .page-when {
-    @apply invisible;
-  }
-
-  .new-page {
-    @apply mt-2.5 self-start text-[15px] text-side-sub italic hover:text-side-ink;
-  }
-
-  .models {
-    @apply flex flex-col gap-0.5 border-t pt-3;
-    border-color: var(--side-line);
-  }
-
-  .model {
-    @apply flex min-h-7 w-full items-baseline gap-2;
-  }
-
-  /* The name opens the model's card. */
-  .model-name {
-    @apply flex-none font-sans text-[13px] font-[650] tracking-[-0.01em];
-  }
-
-  .model-name i {
-    @apply font-serif text-[1.1em] font-medium;
-  }
-
-  /* The word at the end of the row is the switch: ON or OFF, and a click flips it. */
-  .model-state {
-    @apply -my-1 -mr-1.5 flex-none rounded-md px-1.5 py-1 font-sans text-[10px] font-semibold tracking-[0.12em] text-side-sub hover:bg-(--side-hover) hover:text-side-ink;
-  }
-
-  .model-state::after {
-    content: "ON";
-  }
-
-  .model-state[aria-checked="false"]::after {
-    content: "OFF";
-  }
-
-  /* A model that's off fades back, so the two states differ by more than one word. */
-  .model:not([data-on]) > * {
-    @apply opacity-45;
-  }
-
-  /* Fingers need bigger targets than a mouse pointer does. */
-  @media (pointer: coarse) {
-    .model {
-      @apply min-h-11 items-center;
-    }
-
-    .model-name {
-      @apply py-2.5;
-    }
-
-    .model-state {
-      @apply -my-2 -mr-2.5 min-w-11 px-2.5 py-3 text-[11px];
-    }
-
-    .side-icon {
-      @apply size-10;
-    }
-
-    .new-page {
-      @apply inline-flex min-h-11 items-center;
-    }
-  }
-
-  .side-foot {
-    @apply pt-2.5 font-sans text-[11.5px] text-side-faint;
-  }
-
-  .spine {
-    @apply fixed inset-y-0 left-0 z-20 flex w-11 flex-col items-center gap-[18px] border-r bg-side py-[18px] text-side-ink;
-    border-color: var(--side-line);
-    transition: translate 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-
-  .spine-title {
-    @apply rotate-180 font-serif text-lg font-medium tracking-[0.02em];
-    writing-mode: vertical-rl;
-  }
-
-  .spine-title i {
-    @apply text-side-sub;
-  }
-
-  .spine-dots {
-    @apply mt-auto flex flex-col gap-1.5;
-  }
-
-  .spine-dots i {
-    @apply block size-[7px] rounded-full;
-    background: var(--leader);
-  }
-
-  .spine-dots i[data-on] {
-    @apply bg-ink;
-  }
-
-  .spine-dots i#spine-tinyfix[data-on] {
-    @apply bg-context;
-  }
-
-  .backdrop {
-    @apply pointer-events-none fixed inset-0 z-20 bg-black/20 opacity-0 transition-opacity;
-  }
-
-  .shell {
-    transition: padding-left 0.28s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-
-  /* Wide screens: the sidebar sits beside the page, or hides down to the spine. */
-  @media (min-width: 900px) {
-    :root[data-sidebar="open"] .shell {
-      padding-left: 272px;
-    }
-
-    :root[data-sidebar="open"] .spine {
-      translate: -100% 0;
-    }
-
-    :root[data-sidebar="closed"] .shell {
-      padding-left: 44px;
-    }
-
-    :root[data-sidebar="closed"] .sidebar {
-      translate: calc(-100% - 40px) 0;
-    }
-  }
-
-  /* Narrow screens: no spine, and the sidebar is a drawer over the page. */
-  @media (max-width: 899px) {
-    .spine {
-      @apply hidden;
-    }
-
-    :root[data-sidebar="closed"] .sidebar {
-      translate: calc(-100% - 40px) 0;
-    }
-
-    :root[data-sidebar="open"] .backdrop {
-      @apply pointer-events-auto opacity-100;
-    }
-
-    .sidebar {
-      @apply w-[min(300px,86vw)] pb-[calc(16px+env(safe-area-inset-bottom))];
-    }
-  }
-
-  /* No sliding on load: index.html adds .preload until the first frame is drawn. */
-  .preload .sidebar,
-  .preload .spine,
-  .preload .shell {
-    transition: none;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .sidebar,
-    .spine,
-    .shell {
-      transition: none;
-    }
-  }
-}
-
-@layer components {
-  /* Placed next to whichever ⋯ button opened it (sidebar or spine). */
-  .menu {
-    @apply fixed z-40 w-48 rounded-xl bg-surface p-1 font-sans shadow-float;
-  }
-
-  /* The card behind a model's info button: what the model does, in a sentence. */
-  .info-card {
-    @apply fixed z-40 w-[min(300px,calc(100vw-24px))] rounded-[14px] bg-surface px-4 py-3.5 font-sans text-ink shadow-float;
-  }
-
-  .info-name {
-    @apply text-[13px] font-[650] tracking-[-0.01em];
-  }
-
-  .info-kind {
-    @apply text-[11.5px] text-sub;
-  }
-
-  .info-text {
-    @apply mt-1 text-[12.5px] leading-[1.45] text-sub;
-  }
-
-  .info-link {
-    @apply flex-none text-[11.5px] text-sub underline decoration-line underline-offset-2 hover:text-ink;
-  }
-
-  .menu-item {
-    @apply block w-full rounded-lg px-3 py-2 text-left text-[13px] text-ink hover:bg-hover;
   }
 }

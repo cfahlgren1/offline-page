@@ -82,6 +82,12 @@ export function findFix(state: EditorState, id: number): FixPosition | null {
   return found ? { fix: fixSpec(found), from: found.from, to: found.to } : null;
 }
 
+/** A fixed word gets an underline: purple when the model fixed it from context, blue for spelling. */
+const FIX_CLASS: Record<FixKind, string> = {
+  context: "cursor-pointer underline decoration-context-line decoration-2 underline-offset-[5px]",
+  spelling: "cursor-pointer underline decoration-spelling-line decoration-2 underline-offset-[5px]",
+};
+
 const GLIDE_MILLISECONDS = 180;
 
 /** How wide the text between two positions is drawn, or null when it wraps onto a second line. */
@@ -226,7 +232,7 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
               decorations = decorations.remove(stale);
             }
             if (meta?.type === "add") {
-              const attributes = { class: `fix fix-${meta.fix.kind}`, "data-fix-id": String(meta.fix.id) };
+              const attributes = { class: FIX_CLASS[meta.fix.kind], "data-fix-id": String(meta.fix.id) };
               const decoration = Decoration.inline(meta.from, meta.to, attributes, {
                 fix: meta.fix,
                 inclusiveStart: false,
@@ -277,7 +283,7 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
           },
 
           handleClick(view, _pos, event) {
-            const element = (event.target as HTMLElement | null)?.closest<HTMLElement>(".fix");
+            const element = (event.target as HTMLElement | null)?.closest<HTMLElement>("[data-fix-id]");
             const found = element ? findFix(view.state, Number(element.dataset.fixId)) : null;
             if (!element || !found) return false;
             options.onFixClick(found.fix, element);

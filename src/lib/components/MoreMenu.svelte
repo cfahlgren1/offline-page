@@ -12,6 +12,7 @@
   let { getMarkdown, getTitle }: Props = $props();
 
   const COPY = "Copy Markdown";
+  const ITEM = "block w-full rounded-lg px-3 py-2 text-left text-[13px] text-ink hover:bg-hover";
   let copyLabel = $state(COPY);
   let element: HTMLElement | undefined = $state();
 
@@ -49,7 +50,7 @@
   function closeOnOutsidePress(event: MouseEvent): void {
     if (!menu.open) return;
     const target = event.target as Element;
-    if (!element?.contains(target) && !target.closest(".more-button")) closeMenu();
+    if (!element?.contains(target) && !target.closest('[aria-haspopup="menu"]')) closeMenu();
   }
 </script>
 
@@ -58,18 +59,18 @@
 <!-- The ⋯ menu: export, copy and the theme. -->
 <div
   id="more-menu"
-  class="menu"
+  class="fixed z-40 w-48 rounded-xl bg-surface p-1 font-sans shadow-float"
   role="menu"
   hidden={!menu.open}
   style:top="{menu.top}px"
   style:left="{menu.left}px"
   bind:this={element}
 >
-  <button id="export" class="menu-item" type="button" role="menuitem" onclick={exportPage}>Export as Markdown</button>
-  <button id="copy" class="menu-item" type="button" role="menuitem" onclick={copyPage}>{copyLabel}</button>
+  <button id="export" class={ITEM} type="button" role="menuitem" onclick={exportPage}>Export as Markdown</button>
+  <button id="copy" class={ITEM} type="button" role="menuitem" onclick={copyPage}>{copyLabel}</button>
   <button
     id="theme"
-    class="menu-item"
+    class={ITEM}
     type="button"
     role="menuitem"
     onclick={() => {
