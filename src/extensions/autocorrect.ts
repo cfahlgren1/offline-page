@@ -3,8 +3,7 @@ import { closeHistory, undo } from "@tiptap/pm/history";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Plugin, PluginKey, type EditorState } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
-import type { Models } from "../models";
-import type { Correction } from "../tinyfix/fixer";
+import type { Fix, Tinyfix } from "tinyfix";
 
 // A word is finished by a space, by punctuation, or by a closing bracket or quote, as in "(teh)".
 const BOUNDARY = /^[\s.,!?;:)\]"”…]$/;
@@ -43,7 +42,7 @@ interface PluginState {
 }
 
 export interface AutocorrectOptions {
-  getModels: () => Models | null;
+  getTinyfix: () => Tinyfix | null;
   onFixClick: (fix: AppliedFix, element: HTMLElement) => void;
 }
 
@@ -110,14 +109,14 @@ function glideToNewWidth(view: EditorView, fixId: number, widthBefore: number): 
 }
 
 /** Puts the original word back as its own undo step, and stops the same fix from coming back. */
-export function revertFix(view: EditorView, models: Models | null, id: number): void {
+export function revertFix(view: EditorView, tinyfix: Tinyfix | null, id: number): void {
   const found = findFix(view.state, id);
   if (!found) return;
   const meta: Meta = { type: "remove", id };
   view.dispatch(
     closeHistory(view.state.tr.insertText(found.fix.original, found.from, found.to).setMeta(autocorrectKey, meta)),
   );
-  models?.fixer.rememberUndo(found.fix.original);
+  tinyfix?.ignore(found.fix.original);
 }
 
 /** Fixes each word as you finish it, and real words in the wrong place about two words later. Each fix is its own undo step. */
@@ -126,7 +125,7 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
   priority: 1000,
 
   addOptions() {
-    return { getModels: () => null, onFixClick: () => undefined };
+    return { getTinyfix: () => null, onFixClick: () => undefined };
   },
 
   addProseMirrorPlugins() {
@@ -137,7 +136,7 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
     const applyFix = (
       view: EditorView,
       from: number,
-      correction: Correction,
+      correction: Fix,
       typedAfter: string,
       milliseconds: number,
     ): void => {
@@ -150,7 +149,7 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
       if (code && view.state.doc.rangeHasMark(from, to, code)) return;
       const fix: AppliedFix = {
         id: nextId++,
-        kind: correction.usedContext ? "context" : "spelling",
+        kind: correction.kind,
         original: correction.original,
         replacement: correction.replacement,
         typedAfter: typedAfter.trim(),
@@ -164,37 +163,36 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
 
     /** Checks the words before `text`'s end. `blockStart` is the document position of the text's first character. */
     const check = async (view: EditorView, blockStart: number, text: string, boundary: string): Promise<void> => {
-      const models = options.getModels();
-      if (!models) return;
-      // An odd number of backticks means the cursor is inside inline code that hasn't been closed yet.
-      if ((text.match(/`/g)?.length ?? 0) % 2 === 1) return;
+      const tinyfix = options.getTinyfix();
+      if (!tinyfix) return;
 
+      // The word just finished is checked for spelling.
       const typed = WORD_THEN_BOUNDARY.exec(text);
       if (typed) {
-        const word = typed[1]!;
         const start = typed.index;
         const began = performance.now();
-        const correction = await models.fixer.correct(text.slice(0, start), word);
-        if (correction) {
-          applyFix(view, blockStart + start, correction, "", performance.now() - began);
+        const [fix] = await tinyfix.check(text, { range: [start, start + typed[1]!.length], kinds: ["spelling"] });
+        if (fix) {
+          applyFix(view, blockStart + fix.from, fix, "", performance.now() - began);
           return;
         }
       }
 
+      // Earlier words now have words on both sides, so they're checked for being the wrong word. The end of the
+      // paragraph before is read too, so a paragraph's first words have something to their left.
       const offset = Math.max(0, text.length - CONTEXT_CHECK_CHARACTERS);
       const words = [...text.slice(offset).matchAll(FINISHED_WORD)];
+      const leadIn = previousParagraph(view.state.doc, blockStart);
       for (const index of wordsDueForContextCheck(words.length, SENTENCE_END.test(boundary) || boundary === "\n")) {
-        const word = words[index]![0];
         const start = offset + words[index]!.index;
-        if (models.fixer.wasUndone(word)) continue;
+        const end = start + words[index]![0].length;
         const began = performance.now();
-        const correction = await models.wrongWord.check(
-          previousParagraph(view.state.doc, blockStart) + text.slice(0, start),
-          word,
-          text.slice(start + word.length),
-        );
-        if (!correction) continue;
-        applyFix(view, blockStart + start, correction, text.slice(start + word.length), performance.now() - began);
+        const [fix] = await tinyfix.check(leadIn + text, {
+          range: [leadIn.length + start, leadIn.length + end],
+          kinds: ["context"],
+        });
+        if (!fix) continue;
+        applyFix(view, blockStart + start, fix, text.slice(end), performance.now() - began);
         return;
       }
     };
@@ -274,7 +272,7 @@ export const Autocorrect = Extension.create<AutocorrectOptions>({
             if (!last || !view.state.selection.empty || view.state.selection.head !== last.cursor) return false;
             const found = findFix(view.state, last.id);
             if (!found || !undo(view.state, view.dispatch)) return false;
-            options.getModels()?.fixer.rememberUndo(found.fix.original);
+            options.getTinyfix()?.ignore(found.fix.original);
             return true;
           },
 

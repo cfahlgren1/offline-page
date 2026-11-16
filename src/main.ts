@@ -5,12 +5,12 @@ import { revertFix } from "./extensions/autocorrect";
 import { suggestionsKey } from "./extensions/suggestions";
 import { FixPopover } from "./fixPopover";
 import { setupModelPanel } from "./modelPanel";
-import type { Models } from "./models";
 import { setupMoreMenu } from "./moreMenu";
 import { startOfflineCache } from "./offlineCache";
 import { renderPageList } from "./pageList";
 import { settings } from "./settings";
 import { store, type DocRecord, type DocSummary } from "./store";
+import type { Tinyfix } from "tinyfix";
 import { TinyNextClient } from "./tinynext/client";
 import "./styles.css";
 import { WELCOME_MARKDOWN, WELCOME_TITLE } from "./welcome";
@@ -30,7 +30,7 @@ const ui = {
   editorHost: element("editor"),
 };
 
-let models: Models | null = null;
+let tinyfix: Tinyfix | null = null;
 let tinynext: TinyNextClient | null = null;
 let editor: Editor | null = null;
 let current: DocRecord | null = null;
@@ -38,7 +38,7 @@ let saveTimer: number | undefined;
 
 const popover = new FixPopover((fix) => {
   if (!editor) return;
-  revertFix(editor.view, models, fix.id);
+  revertFix(editor.view, tinyfix, fix.id);
   editor.commands.focus();
 });
 
@@ -91,7 +91,7 @@ function renderMeta(): void {
 type OpenContent = { type: "json"; content: JSONContent } | { type: "markdown"; content: string };
 
 /** Model output is only used while its switch is on. Switching tinynext off also clears the suggestion on screen. */
-const activeModels = (): Models | null => (settings.isModelOn("tinyfix") ? models : null);
+const activeTinyfix = (): Tinyfix | null => (settings.isModelOn("tinyfix") ? tinyfix : null);
 const activeTinyNext = (): TinyNextClient | null => (settings.isModelOn("tinynext") ? tinynext : null);
 
 /** New pages start with the cursor in the title; existing ones open at the top. */
@@ -110,7 +110,7 @@ function open(saved: DocRecord, opened?: OpenContent, focus: "start" | "end" = "
     content: source.content,
     contentType: source.type,
     focus,
-    getModels: activeModels,
+    getTinyfix: activeTinyfix,
     getTinyNext: activeTinyNext,
     onFixClick: (fix, anchor) => popover.show(fix, anchor),
     onUpdate: () => {
@@ -236,6 +236,8 @@ declare global {
 // Absolute, because the worker resolves relative URLs against its own script in assets/, not the page.
 const TINYNEXT_URL = new URL(`${import.meta.env.BASE_URL}models/tinynext/`, location.href).href;
 
+const TINYFIX_URL = `${import.meta.env.BASE_URL}models/`;
+
 async function loadTinyNext(): Promise<TinyNextClient> {
   const client = new TinyNextClient();
   await client.load(TINYNEXT_URL);
@@ -250,9 +252,10 @@ async function startModels(offlineCache: Promise<boolean>): Promise<void> {
   const worksOffline = await offlineCache;
   try {
     // Loaded on demand, so the ONNX runtime isn't part of the script the first paint waits for.
-    const { loadModels } = await import("./models");
-    const [loaded, client] = await Promise.all([loadModels(), loadTinyNext()]);
-    models = loaded;
+    const { loadTinyfix } = await import("tinyfix");
+    // The model and word lists are served by this site, so they're in the offline cache with everything else.
+    const [loaded, client] = await Promise.all([loadTinyfix({ baseUrl: TINYFIX_URL }), loadTinyNext()]);
+    tinyfix = loaded;
     tinynext = client;
     window.offlinePageDebug = { suggestionTimings: client.timings };
     modelPanel.setStatus({ state: "ready", worksOffline });

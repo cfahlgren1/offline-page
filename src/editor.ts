@@ -7,7 +7,7 @@ import { Autocorrect, type AppliedFix } from "./extensions/autocorrect";
 import { CodeHighlight } from "./extensions/codeHighlight";
 import { SlashMenu } from "./extensions/slashMenu";
 import { Suggestions } from "./extensions/suggestions";
-import type { Models } from "./models";
+import type { Tinyfix } from "tinyfix";
 import type { TinyNextClient } from "./tinynext/client";
 
 /** Every page starts with a heading, which is its title. */
@@ -19,7 +19,7 @@ export interface EditorSetup {
   contentType: "json" | "markdown";
   /** Where the cursor starts: the top of the page, or the end of it. */
   focus: "start" | "end";
-  getModels: () => Models | null;
+  getTinyfix: () => Tinyfix | null;
   getTinyNext: () => TinyNextClient | null;
   onFixClick: (fix: AppliedFix, element: HTMLElement) => void;
   onUpdate: (editor: Editor) => void;
@@ -63,7 +63,7 @@ export function createEditor(setup: EditorSetup): Editor {
         placeholder: ({ pos }) => (pos === 0 ? "Untitled" : "Write, or press / for blocks"),
       }),
       Markdown,
-      Autocorrect.configure({ getModels: setup.getModels, onFixClick: setup.onFixClick }),
+      Autocorrect.configure({ getTinyfix: setup.getTinyfix, onFixClick: setup.onFixClick }),
       Suggestions.configure({ getTinyNext: setup.getTinyNext }),
       SlashMenu,
       CodeHighlight,
