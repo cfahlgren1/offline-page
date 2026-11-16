@@ -1,5 +1,5 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
   "printWidth": 120,
-  "ignorePatterns": ["dist", "public", "brand/*.png", "package-lock.json"]
+  "ignorePatterns": [".svelte-kit", "brand/*.png", "dist", "package-lock.json", "static"]
 }

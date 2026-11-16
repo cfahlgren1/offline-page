@@ -1,5 +1,5 @@
 // onnxruntime-web's package exports don't list its .wasm, so it's imported by path. Vite emits it once for both bundles.
-import runtimeUrl from "../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm?url";
+import runtimeUrl from "../../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm?url";
 import type { ModelFiles, WorkerReply, WorkerRequest } from "./worker";
 
 async function fetchOk(url: string): Promise<Response> {

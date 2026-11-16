@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="A free Markdown writing app with autocorrect and autocomplete that run in your browser and keep working in airplane mode. No account, nothing you type leaves your device."
+    />
+    <link rel="canonical" href="https://offlinepage.app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="offlinepage.app" />
+    <meta property="og:url" content="https://offlinepage.app/" />
+    <meta property="og:title" content="offlinepage.app: a writing app that works in airplane mode" />
+    <meta
+      property="og:description"
+      content="Autocorrect and autocomplete from two tiny models that run in your browser tab. No account, nothing you type leaves your device."
+    />
+    <meta property="og:image" content="https://offlinepage.app/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="offlinepage.app. Writes with you, even in airplane mode." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="offlinepage.app: a writing app that works in airplane mode" />
+    <meta
+      name="twitter:description"
+      content="Autocorrect and autocomplete from two tiny models that run in your browser tab. No account, nothing you type leaves your device."
+    />
+    <meta name="twitter:image" content="https://offlinepage.app/og.png" />
+    <meta name="theme-color" content="#fbfbf9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111112" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
+    <link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
+    <title>offlinepage.app: a writing app with autocorrect that works offline</title>
+    %sveltekit.head%
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "offlinepage.app",
+        "url": "https://offlinepage.app/",
+        "description": "A Markdown writing app with autocorrect and autocomplete that run in your browser and keep working offline.",
+        "applicationCategory": "ProductivityApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and WebAssembly",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "image": "https://offlinepage.app/og.png"
+      }
+    </script>
+    <!-- Sets the sidebar and theme before the first paint, so the page doesn't shift or flash while the app loads. -->
+    <script>
+      (function () {
+        var root = document.documentElement;
+        root.classList.add("preload");
+        var open = !matchMedia("(max-width: 899px)").matches;
+        try {
+          if (localStorage.getItem("offline.page/sidebar") === "closed") open = false;
+          var theme = localStorage.getItem("offline.page/theme");
+          if (theme === "light" || theme === "dark") root.dataset.theme = theme;
+          // Someone with saved pages gets their own page, so the built-in welcome page stays hidden.
+          if (localStorage.getItem("offline.page/docs")) root.dataset.returning = "";
+        } catch (error) {}
+        root.dataset.sidebar = open ? "open" : "closed";
+      })();
+    </script>
+  </head>
+  <body>
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>

@@ -1,3 +1,0 @@
-# Cloudflare reads this file. Files in assets/ have a hash in their name, so browsers can keep them for good.
-/assets/*
-  Cache-Control: public, max-age=31536000, immutable

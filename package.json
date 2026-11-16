@@ -3,14 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#lib/*": "./src/lib/*"
+  },
   "scripts": {
-    "dev": "vite",
+    "dev": "vite dev",
     "build": "npm run check && vite build && node scripts/write-service-worker.mjs",
     "preview": "vite preview",
-    "check": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "lint": "oxlint",
-    "format": "oxfmt",
-    "format:check": "oxfmt --check",
+    "format": "oxfmt && prettier --write \"src/**/*.svelte\"",
+    "format:check": "oxfmt --check && prettier --check \"src/**/*.svelte\"",
     "brand": "node brand/render.mjs",
     "deploy": "bash scripts/deploy-space.sh",
     "deploy:cloudflare": "bash scripts/deploy-cloudflare.sh"
@@ -29,13 +32,20 @@
     "tinyfix": "^0.1.0"
   },
   "devDependencies": {
+    "@sveltejs/adapter-static": "^4.0.1",
+    "@sveltejs/kit": "^3.2.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^26.6.6",
     "oxfmt": "^0.78.0",
     "oxlint": "^1.93.0",
     "playwright-core": "^1.65.0",
+    "prettier": "^3.10.1",
+    "prettier-plugin-svelte": "^4.1.1",
+    "svelte": "^5.57.3",
+    "svelte-check": "^4.7.8",
     "tailwindcss": "^4.3.5",
-    "typescript": "~5.9",
+    "typescript": "^6.0.3",
     "vite": "^8.3.8"
   }
 }

@@ -10,7 +10,7 @@
     "browser": true,
     "es2024": true
   },
-  "ignorePatterns": ["dist", "brand/src/dither.js"],
+  "ignorePatterns": ["dist", ".svelte-kit", "brand/src/dither.js"],
   "rules": {
     "no-unused-vars": "error",
     "eqeqeq": "error",

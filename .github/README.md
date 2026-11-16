@@ -29,6 +29,7 @@
 ## Features
 
 - Markdown editing on [Tiptap](https://tiptap.dev): headings, lists, quotes, code and dividers, with a `/` menu
+- Built with [SvelteKit](https://svelte.dev/docs/kit) and Tailwind, as one page that's turned into plain HTML ahead of time
 - Pages saved in your browser's local storage, with Markdown export and copy
 - Light and dark mode
 - A service worker that caches the app, the ONNX runtime and both models on the first visit, so later visits load with no network
